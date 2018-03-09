@@ -1,0 +1,34 @@
+{
+  "name": "dabou",
+  "version": "1.0.0",
+  "description": "an app to organise your board games and organise game nights",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "node_modules/babel-cli/bin/babel.js ./ --source-maps --out-dir dist",
+    "start": "node_modules/nodemon/bin/nodemon.js -- node_modules/babel-cli/bin/babel-node.js server.js",
+    "populate": "node_modules/babel-cli/bin/babel-node.js populate.js"
+  },
+  "author": "vanhove",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.18.2",
+    "compression": "^1.7.2",
+    "ejs": "^2.5.7",
+    "express": "^4.16.2",
+    "express-session": "^1.15.6",
+    "method-override": "^2.3.10",
+    "moment": "^2.20.1",
+    "morgan": "^1.9.0",
+    "neo4j": "^2.0.0-RC2",
+    "neo4j-driver": "^1.5.3",
+    "randomstring": "^1.1.5"
+  },
+  "devDependencies": {
+    "babel": "^6.23.0",
+    "babel-cli": "^6.26.0",
+    "babel-preset-es2015": "^6.24.1",
+    "babel-preset-stage-0": "^6.24.1",
+    "nodemon": "^1.14.12"
+  }
+}
