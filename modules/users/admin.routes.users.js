@@ -19,13 +19,6 @@ router.get('/advanced', authorize, listUsers);
 
 
 
-
-
-
-
-
-
-
 function authorize(req, res, next) {
 	if (true) {
 		next()

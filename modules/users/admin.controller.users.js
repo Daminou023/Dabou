@@ -15,9 +15,9 @@ exports.listUsers = function(req, res, next) {
 		.run('MATCH (user:User) RETURN user')
 		.then(function(result){
 			result.records.forEach(function(record){
-				let user = record.get('user').properties;
-				delete user.password;
-				listOfUsers.push(user);
+				let user = new User(record.get('user').properties);
+				delete user.values.passWord;
+				listOfUsers.push(user.values);
 			})
 			res.json(listOfUsers);
 			closeConnection()
@@ -51,36 +51,20 @@ exports.getUser = function(req, res, next) {
 
 // CREATE A NEW USER
 exports.createUser = function(req, res, next) {
-	let missingProperties = [];
 
-	let newUser = {
-		name 		: req.body.name,
-		sirName 	: req.body.sirName,
-		mail 		: req.body.mail,
-		userName 	: req.body.userName,
-		passWord 	: hashPassword(req.body.passWord),
-		role 		: "user",
-		key			: req.body.userName + randomstring.generate({ length: 10, charset: 'hex'})
-	}	
-
-	for (let property in newUser) {
-		if (newUser[property] === undefined) {
-			missingProperties.push(property)			
-		}
-	}
-
-	if (missingProperties.length > 0) {
-		let message = {
-			'status': 400,
-			'message': "sorry, missing properties on user to create",
-			'missingProperties': missingProperties
-		}
-		res.send(message, 404);
+	let newUser = new User(req.body)
+	
+	if (newUser.error) {
+		res.status(400).send(newUser.error);
 		return
 	}
+	
+	newUser.values.role = "user"
+	newUser.values.passWord = hashPassword(req.body.passWord);
+	newUser.values.key = req.body.userName + randomstring.generate({ length: 10, charset: 'hex'})
 
 	neoSession
-			.run("MATCH (user:User)WHERE user.userName='" + newUser.userName +  "' RETURN user")
+			.run("MATCH (user:User)WHERE user.userName='" + newUser.values.userName +  "' RETURN user")
 			.then(results => {
     			if (results.records.length > 0) {
     				let message = {
@@ -90,19 +74,10 @@ exports.createUser = function(req, res, next) {
 					res.status(400).send(message);
 				}
 				else {
-					neoSession
 
-					.run(`CREATE (user:User {key: {key}, name:{name}, sirName:{sirName}, userName: {userName}, mail:{mail}, passWord: {passWord}, role: {role}}) RETURN user`,
-					        {
-					            key: newUser.key,
-					            name: newUser.name,
-					            sirName: newUser.sirName,
-								userName: newUser.userName,
-					            mail: newUser.mail,
-					            passWord: newUser.passWord,
-					            role: newUser.role	            
-					        }
-					   	)
+					neoSession
+					.run(
+						`CREATE (user:User {user}) RETURN user`, {user: newUser.values})
 			        	.then(results => {
 							let createdUser = results.records[0].get('user').properties;
 							delete createdUser.passWord;
@@ -112,7 +87,6 @@ exports.createUser = function(req, res, next) {
 			            		'message': 'user was added!',
 			            		'user': createdUser
 							}
-							console.log(message.user);
 							res.status(200).send(message);
 							closeConnection()
 			          	})
@@ -131,56 +105,66 @@ exports.createUser = function(req, res, next) {
 
 // EDIT INFORMATION ON A SINGLE USER
 exports.editUser = function(req, res, next) {
-	let userKey = req.params.userKey;
-	let user = new User(req.body);
-	let query = "MATCH (user:User)WHERE user.key='" + userKey + "'";
-
-	for (let property in user) {
-		if (user[property] === undefined) {
-			delete user[property];
-		}
-		if (property = "passWord") {
-			user[property] = hashPassword(user[property])
-		}
-		query += `SET user.${property} ='${user[property]}'`;
-	}
 	
-	neoSession
-	.run(
-		query += "RETURN user"
-	)
-	.then(results => {
-		let editedUser = results.records[0].get('user').properties;
-		delete editedUser.password;
-		let message = {
-			'status': 200,
-			'message': 'user was edited!',
-			'user': editedUser
+	let user = new User(req.body);
+	user.values.key = req.params.userKey;
+
+	if(user.error.unknownProperties) {
+		res.status(400).send(user.error);
+		return
+	}
+
+	let query = "MATCH (user:User)WHERE user.key='" + user.values.key + "'";
+	for (let property in user.values) {
+		if (property == "passWord") {
+			user.values[property] = hashPassword(user.values[property])
 		}
-		res.status(200).send(message);
-		closeConnection()
-	  })
-	  .catch(function(err) {
-		return next(err);
-		closeConnection()
-	})
+		query += `SET user.${property} ="${user.values[property]}"`;
+	}
+	query += "RETURN user"
+
+	console.log(query)
+
+	neoSession
+		.run("MATCH (user:User)WHERE user.key='" + user.values.key +  "' RETURN user")
+		.then(result => {
+			if (result.records.length == 0) {
+				handleNoResultsResponse(req, res)
+			} else {
+				neoSession
+					.run(query)
+					.then(results => {
+						let editedUser = new User(results.records[0].get('user').properties);
+						delete editedUser.password;
+						let message = {
+							'status': 200,
+							'message': 'user was edited!',
+							'user': editedUser.values
+						}
+						res.status(200).send(message);
+						closeConnection()
+					})
+					.catch(function(err) {
+						return next(err);
+						closeConnection()
+					})
+			}
+		})
+		.catch(function(err) {
+			return next(err);
+			closeConnection()
+	});
 }
 
 
 // DELETE A USER
-
 /*
-* !! when deleting a user, or any node for that matter, do not forget to 
-* delete all links to that node before you delete it! or neo4J will spit
-* back at your face... yeah..
+* !! when deleting a user, or any node, do not forget to 
+* delete all links to that node before you delete it!
 */
-
 exports.deleteUser = function(req, res, next) {
 	let userKey = req.params.userKey;
-	let query = `
-		MATCH (user:User{ key: ${userKey} }) 
-		DETACH
-		DELETE user`;
+	let query = 'MATCH (user:User{ key:"' + userKey + '"}) DETACH DELETE user';
 	
 	neoSession
 		.run(
