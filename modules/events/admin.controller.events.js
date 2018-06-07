@@ -1,3 +1,4 @@
+import { link } from "fs";
 
 // CONFIGURE NEO4J DRIVER
 var randomstring  = require("randomstring");
@@ -5,6 +6,7 @@ const neo4j 	  = require('neo4j-driver').v1;
 var neoDriver 	  = neo4j.driver("bolt://localhost:7687", neo4j.auth.basic("neo4j", "123456789"));
 var neoSession 	  = neoDriver.session();
 var Event 		  = require('./model.event');
+var EventLinks    = require('./model.eventLinks');
 
 
 // GET LIST OF ALL EVENTS
@@ -52,15 +54,30 @@ exports.getEvent = function(req, res, next) {
 * note: events can have the same name.
 */
 exports.createNewEvent = function(req, res, next) {
-    let newEvent = new Event(req.body);
+	let newEvent = new Event(req.body.properties);
+	let links = new EventLinks(req.body.links);
+
+	console.log(newEvent)
+
     if (newEvent.error) {
 		res.status(400).send(newEvent.error);
 		return
 	}
-	let key = req.body.title + Date.now() + randomstring.generate({ length: 10, charset: 'hex'})
+
+	if (links.error) {
+		res.status(400).send(links);
+		return
+	}
+
+
+	let key = req.body.properties.title + Date.now() + randomstring.generate({ length: 10, charset: 'hex'})
+
+
 	key = key.replace(/\s+/g, '')
 	newEvent.values.key = key
 	
+	var request
+
 	neoSession
 			.run("MATCH (event:Event)WHERE event.key='" + newEvent.values.key +  "' RETURN event")
 			.then(results => {
@@ -72,10 +89,30 @@ exports.createNewEvent = function(req, res, next) {
 					res.status(400).send(message);
 				}
 				else {
+
+					request = 
+						`MATCH (user:User) WHERE user.key='${links.values.organiser}' ` +
+						`MATCH (location:Location) WHERE location.key='${links.values.location}' ` +
+						`WITH user, location ` +
+						`CREATE (event:Event {event}) ` +
+						`WITH user, location, event ` +
+						`CREATE (user)-[:Organises]->(event) ` +
+						`CREATE (event)-[:TakesPlaceAt]->(location) ` +
+						`RETURN user, location, event`;
+
 					neoSession
 					.run(
-						`CREATE (event:Event {event}) RETURN event`, {event: newEvent.values})
+						request , {event: newEvent.values})
 			        	.then(results => {
+							console.log(results)
+							if(results.records.length <= 0) {
+								let message = {
+									'status': 404,
+									'message': 'Oops, user or location was not found..',							
+								}
+								res.status(404).send(message);
+							} else {
+
 							let createdEvent = results.records[0].get('event').properties;
 			            	let message = {
 			            		'status': 200,
@@ -83,18 +120,36 @@ exports.createNewEvent = function(req, res, next) {
 			            		'event': createdEvent
 							}
 							res.status(200).send(message);
-							closeConnection()
-			          	})
+						  }
+						  closeConnection()
+						})
 			          	.catch(function(err) {
 							return next(err);
 							closeConnection()
 						})
-				}
+					}
+				
 			})
       		.catch(function(err) {
 				return next(err);
 				closeConnection();
 			});
+	
+	console.log(request)
+
+
+	// `MATCH (game:Game) WHERE game.key='${links.values.games}' ` +
+	/*
+			
+	MATCH (n:Review)
+	WHERE n.title IN ['great as always'] RETURN n
+
+	*/
+
+	// res.status(200).send(request)
+
+
+	// TODO: Add games
 }
 
 
@@ -178,6 +233,11 @@ exports.deleteEvent = function(req, res, next) {
 			return next(err);
 			closeConnection();
 		})
+}
+
+
+exports.getAll = function(req, res, next) {
+
 }
 
 

@@ -1,6 +1,5 @@
 var ReviewLinks = function (links) {
-
-
+    
     if (links == undefined) {
         return {
             error: {

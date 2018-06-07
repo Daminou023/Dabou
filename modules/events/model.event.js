@@ -1,12 +1,21 @@
 var Event = function (properties) {
 
+    if (properties == undefined) {
+        return {
+            error: {
+                error: "object syntax error: event properties were not given",
+                expectedStructure: "{ properties: {}, links: {}}"
+            }
+        }
+    }
+
     let eventProperties = {
         
         key:                    { value: properties["key"] },
         title:                  { value: properties["title"] ,              required:true },
         description:            { value: properties["description"],         required:true },
         minParticipants:        { value: properties["minParticipants"],     required:true },
-        maxParticipatns:        { value: properties["maxParticipatns"],     required:true },
+        maxParticipants:        { value: properties["maxParticipants"],     required:true },
         length:                 { value: properties["length"],              required:true }, 
         photo:                  { value: properties["photo"] }, 
         type:                   { value: properties["type"],                required:true }
