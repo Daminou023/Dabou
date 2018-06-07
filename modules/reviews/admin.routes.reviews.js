@@ -13,7 +13,7 @@ router.route('/new')
 	.post(AdminReviewsController.createNewReview);
 
 
-router.route('/:eventKey')
+router.route('/:reviewKey')
   .get(AdminReviewsController.getReview)
   .put(AdminReviewsController.editReview)
   .delete(AdminReviewsController.deleteReview);
