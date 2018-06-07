@@ -9,16 +9,13 @@ const Event 	  = require('../model.event');
 const EventLinks  = require('../model.eventLinks');
 const ReturnUser  = require('../../users/model.users.out');
 const ReturnEvent = require('../model.event.out');
+const Utils 	  = require('../../utils/utils');
 
-
+const utils = new Utils();
 
 exports.getCreator = function(req, res, next) {
-    let eventKey = req.params.eventKey;
-
-//    MATCH p=(u:User)-[r:Organises]->(e:Event{key:'NaN4de58ff7f0'}) RETURN p
-
+    const eventKey = req.params.eventKey;
     const query = `MATCH (organiser:User)-[link:Organises]->(event:Event{key:'${eventKey}'}) RETURN organiser, link, event`;
-
     neoSession
 		.run(query)
 		.then(result => {
@@ -43,7 +40,48 @@ exports.getCreator = function(req, res, next) {
 }
 
 exports.changeCreator = function(req, res, next) {
+	const creatorKey = req.body.creatorKey;
+	const eventKey = req.params.eventKey;
+	
+	if (!creatorKey) return utils.handleBadRequestResponse(req, res,'Sorry, no creator key was given');
+	
 
+	const checkCreatorExistsquery = `MATCH (organiser:User{key:'${creatorKey}'}) RETURN organiser`;
+	const changeCreatorQuery 	  = `MATCH (oldOrganiser:User)-[oldLink:Organises]->(event:Event{key:'${eventKey}'}), (newOrganiser:User{key:'${creatorKey}'})
+									 CREATE (newOrganiser)-[newLink:Organises]->(event)
+									 DELETE oldLink
+									 RETURN event, newOrganiser`;
+
+	neoSession
+		.run(checkCreatorExistsquery)
+		.then(result => {
+			if (result.records.length == 0) {
+				utils.handleNoResultsResponse(req, res, 'Sorry, there is no creator that matches this key')
+			} else {
+				neoSession
+					.run(changeCreatorQuery)
+					.then(results => {
+						const newUser 	  = new ReturnUser(results.records[0].get('newOrganiser').properties);
+						const event = new Event(results.records[0].get('event').properties);
+						let message = {
+							'status': 200,
+							'message': 'event creator was edited!',
+							'new organizer': newUser.values,
+							'event': event.values
+						}
+						res.status(200).send(message);
+						closeConnection()
+					})
+					.catch(function(err) {
+						return next(err);
+						closeConnection()
+					})
+			}
+		})
+		.catch(function(err) {
+			return next(err);
+			closeConnection()
+		});
 }
 
 
