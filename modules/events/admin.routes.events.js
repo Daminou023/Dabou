@@ -11,17 +11,17 @@ const AdminEventsParticipatnsController = require('./participants/admin.controll
 
 // GET LIST OF EVENTS
 router.route('/list')
-	.get(AdminEventsController.listEvents)
+	.get(AdminEventsController.listEvents)  // ok
 
 
 router.route('/new')
-	.post(AdminEventsController.createNewEvent);
+	.post(AdminEventsController.createNewEvent); // ok
 
 
 router.route('/:eventKey')
-  .get(AdminEventsController.getEvent)
-  .put(AdminEventsController.editEvent)
-  .delete(AdminEventsController.deleteEvent);
+  .get(AdminEventsController.getEvent)        // ok
+  .put(AdminEventsController.editEvent)       // ok
+  .delete(AdminEventsController.deleteEvent); // ok
 
 
 router.route('/:eventKey/all')
@@ -29,14 +29,14 @@ router.route('/:eventKey/all')
 
 
 router.route('/:eventKey/creator')
-  .get(AdminEventsCreatorController.getCreator)
-  .put(AdminEventsCreatorController.changeCreator)
+  .get(AdminEventsCreatorController.getCreator)     // ok
+  .put(AdminEventsCreatorController.changeCreator)  // ok
 
 
 router.route('/:eventKey/invitations')
-  .get(AdminEventsInvitationsController.getInvitations)
-  .put(AdminEventsInvitationsController.changeInvitations)
-  .delete(AdminEventsInvitationsController.deleteInvitations)
+  .get(AdminEventsInvitationsController.getInvitations)             // todo
+  .post(AdminEventsInvitationsController.addInvitations)            // todo
+  .delete(AdminEventsInvitationsController.deleteInvitations)       // todo
 
 
 router.route('/:eventKey/demands')
