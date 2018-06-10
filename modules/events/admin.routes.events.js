@@ -34,9 +34,10 @@ router.route('/:eventKey/creator')
 
 
 router.route('/:eventKey/invitations')
-  .get(AdminEventsInvitationsController.getInvitations)             // todo
-  .post(AdminEventsInvitationsController.addInvitations)            // todo
-  .delete(AdminEventsInvitationsController.deleteInvitations)       // todo
+  .get(AdminEventsInvitationsController.getInvitations)             // ok
+  .post(AdminEventsInvitationsController.addInvitations)            // ok
+  .delete(AdminEventsInvitationsController.deleteInvitations)       // ok
+  .put(AdminEventsInvitationsController.editInvitations)            // todo
 
 
 router.route('/:eventKey/demands')

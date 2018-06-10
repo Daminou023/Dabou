@@ -57,8 +57,7 @@ module.exports = () => {
     }
 
     function errorHandler(err, req, res, next) {
-        res.status(500)
-        .json(err);
+        res.status(500).json('internal server error');
     }
     
     return app;

@@ -7,19 +7,22 @@ var neoDriver 	  = neo4j.driver("bolt://localhost:7687", neo4j.auth.basic("neo4j
 var neoSession 	  = neoDriver.session();
 var Event 		  = require('../model.event');
 var EventLinks    = require('../model.eventLinks');
+const Invitation  = require('./admin.events.invitations.model')
 const ReturnUser  = require('../../users/model.users.out');
 const ReturnEvent = require('../model.event.out');
 const Utils 	  = require('../../utils/utils');
 
 const utils = new Utils();
 
+
+// GET INVITATIONS FOR A GIVEN EVENT
 exports.getInvitations = function(req, res, next) {
     const eventKey = req.params.eventKey;
     
     const checkEventExistsQuery = `MATCH (event:Event{key:'${eventKey}'}) return event `
 
     const query = `MATCH (user:User)-[link:invitedTo]->(:Event{key:'${eventKey}'}) 
-                   RETURN user`;
+                   RETURN user, link`;
 
     neoSession
         .run(checkEventExistsQuery)
@@ -27,12 +30,17 @@ exports.getInvitations = function(req, res, next) {
             if (result.records.length == 0) {
                 utils.handleNoResultsResponse(req, res, 'Sorry, no event with this key was found')
             } else { 
-                const event = new ReturnEvent(result.records[0].get('event').properties).values;
+                const event = new ReturnEvent(result.records[0].get('event').properties).values
                 neoSession
                 .run(query)
                 .then(result => {
                     const response = {
-                        users : result.records.map(record => new ReturnUser(record.get('user').properties).values),
+                        invitations : result.records.map(record => {
+                            return {
+                                user: new ReturnUser(record.get('user').properties).values,
+                                inviteStatus: record.get('link').properties.status
+                            }
+                        }),
                         event : event
                     }
                     res.json(response);
@@ -51,6 +59,7 @@ exports.getInvitations = function(req, res, next) {
 }
 
 
+// ADD NEW INVITATIONS TO AN EVENT
 exports.addInvitations  = function(req, res, next) {
     const userKeys = req.body.userKeys
     const eventKey = req.params.eventKey;
@@ -64,8 +73,9 @@ exports.addInvitations  = function(req, res, next) {
                                    RETURN user`;
 
     const addInvitationsQuery = `MATCH  (event:Event{key:'${eventKey}'}) 
-                                 MATCH  (user:User) WHERE user.key IN [${userKeys.map(key => `'${key}'`)}] 
-                                 CREATE UNIQUE (user)-[:invitedTo]->(event) 
+                                 MATCH  (user:User) WHERE user.key IN [${userKeys.map(key => `'${key}'`)}]
+                                 AND NOT (user)-[:invitedTo]->(event)
+                                 CREATE UNIQUE (user)-[:invitedTo {status:'pending'}]->(event) 
                                  RETURN user, event `
 
     neoSession
@@ -116,7 +126,7 @@ exports.addInvitations  = function(req, res, next) {
 }
 
 
-
+// DELETE INVITATIONS FOR A GIVEN EVENT
 exports.deleteInvitations = function(req, res, next) {
     const userKeys = req.body.userKeys
     const eventKey = req.params.eventKey;
@@ -155,7 +165,6 @@ exports.deleteInvitations = function(req, res, next) {
                             .run(deleteInvitationsQuery)
                             .then(results => {
                                 let message = {
-                                    'status': 200,
                                     'message': 'event invitations were deleted!',
                                     'event':       results.records.map(record => new ReturnEvent(record.get('event').properties).values)[0],
                                     'deleted invites': results.records.map(record => new ReturnUser(record.get('user').properties).values),
@@ -167,9 +176,6 @@ exports.deleteInvitations = function(req, res, next) {
                                 return next(err);
                                 closeConnection()
                             })
-                            let users = result.records.map(record => record.get('user').properties.key)
-                        console.log(users);
-
                     }
                 })
                 .catch( err => {
@@ -185,7 +191,106 @@ exports.deleteInvitations = function(req, res, next) {
 }
 
 
-// CLOSE CONNECTION AND DRIVER TO DB //TODO: this function should be made into a service
+// EDIT INVITATION STATUSES 
+exports.editInvitations = function(req, res, next) {
+    const eventKey = req.params.eventKey;
+    const keysAndStatus = req.body.keysAndStatus
+    const userKeys = keysAndStatus.map(ks => ks.userKey)
+
+    if (!keysAndStatus || keysAndStatus.length <= 0 || keysAndStatus.constructor !== Array) return utils.handleBadRequestResponse(req, res,'Sorry, syntax error. Please provide an array of user keys and status')
+    
+    const queryError = (keysAndStatus).map(ks => new Invitation(ks)).filter(ks => ks.error);
+    if (queryError.length > 0) return utils.handleBadRequestResponse(req, res, 'Sorry, there are syntax errors in the provided values')
+
+    const checkEventExistsQuery = `MATCH (event:Event{key:'${eventKey}'}) return event`
+    
+    const checkUsersExistsquery = `MATCH (user:User) 
+                                   WHERE user.key IN [${userKeys.map(key => `'${key}'`)}] 
+                                   RETURN user`;
+    
+    const acceptedInvitations =  keysAndStatus.filter(ks => ks.inviteStatus === 'accepted').map(ks => ks.userKey);
+    const rejectedInvitations =  keysAndStatus.filter(ks => ks.inviteStatus === 'rejected').map(ks => ks.userKey);
+    const pendingInvitations  =  keysAndStatus.filter(ks => ks.inviteStatus === 'pending').map(ks => ks.userKey);
+    let queries = [];
+
+    console.log(acceptedInvitations)
+    console.log(rejectedInvitations)
+    console.log(pendingInvitations)
+    
+    const changeAcceptedInvitations = `MATCH  (user)-[rel:invitedTo]->(event:Event{key:'${eventKey}'}) WHERE user.key IN [${acceptedInvitations.map(key => `'${key}'`)}] 
+                                       SET rel.status = "accepted"
+                                       RETURN rel, user`
+
+    const changeRejectedInvitations = `MATCH  (user)-[rel:invitedTo]->(event:Event{key:'${eventKey}'}) WHERE user.key IN [${rejectedInvitations.map(key => `'${key}'`)}] 
+                                       SET rel.status = "rejected"
+                                       RETURN rel, user`
+
+    const changePendingInvitations  = `MATCH  (user)-[rel:invitedTo]->(event:Event{key:'${eventKey}'}) WHERE user.key IN [${pendingInvitations.map(key => `'${key}'`)}] 
+                                       SET rel.status = "pending"
+                                       RETURN rel, user`        
+    
+
+    neoSession
+    .run(checkEventExistsQuery)
+    .then(result => {
+        if (result.records.length <= 0 ) {
+            utils.handleNoResultsResponse(req, res, 'Sorry, no event with this key was found')
+        } else {
+            neoSession
+            .run(checkUsersExistsquery)
+            .then(result => {
+                if (result.records.length < userKeys.length) {
+
+                    const unknownUsers = userKeys.filter(key => !result.records.map(record => record.get('user').properties.key).includes(key))
+                    const msg = {
+                        'userError': 'Sorry, some users were not found matching these keys',
+                        'unknown keys' : unknownUsers
+                    }
+                    utils.handleNoResultsResponse(req, res, msg)
+                } else {
+
+                    Promise.all([
+                        neoSession.run(changeAcceptedInvitations),
+                        neoSession.run(changeRejectedInvitations),
+                        neoSession.run(changePendingInvitations),
+                    ])
+                    .then((results) => {
+
+                        console.log('res:', results)
+
+                        let message = {
+                            'status': 200,
+                            'message': 'event invitations were changed!',
+                            'results' : {
+                                'accepted':results[0].records.map(record => new ReturnUser(record.get('user').properties).values),
+                                'rejected':results[1].records.map(record => new ReturnUser(record.get('user').properties).values),
+                                'pending':results[2].records.map(record => new ReturnUser(record.get('user').properties).values),
+                            }
+                        }
+                        res.status(200).send(message);
+                        closeConnection()
+                      })
+                      .catch(function(err) {
+                        return next(err);
+                        closeConnection()
+                    })
+                }
+            })
+            .catch( err => {
+                return next(err);
+                closeConnection()
+            });            
+        }
+    })
+    .catch( err => {
+        return next(err);
+        closeConnection()
+    });
+}
+
+
+// CLOSE CONNECTION AND DRIVER TO DB 
+//TODO: this function should be made into a service
 function closeConnection() {
 	neoSession.close();
 	neoDriver.close();
