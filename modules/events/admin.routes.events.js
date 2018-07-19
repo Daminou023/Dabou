@@ -37,13 +37,14 @@ router.route('/:eventKey/invitations')
   .get(AdminEventsInvitationsController.getInvitations)             // ok
   .post(AdminEventsInvitationsController.addInvitations)            // ok
   .delete(AdminEventsInvitationsController.deleteInvitations)       // ok
-  .put(AdminEventsInvitationsController.editInvitations)            // todo
+  .put(AdminEventsInvitationsController.editInvitations)            // ok
 
 
 router.route('/:eventKey/demands')
-  .get(AdminEventsDemandsController.getDemands)
-  .put(AdminEventsDemandsController.changeDemands)
-  .delete(AdminEventsDemandsController.deleteDemands)
+  .get(AdminEventsDemandsController.getInviteDemands)
+  .post(AdminEventsDemandsController.addInviteDemands)
+  .put(AdminEventsDemandsController.changeInviteDemands)
+  .delete(AdminEventsDemandsController.deleteInviteDemands)
 
 
 router.route('/:eventKey/location')

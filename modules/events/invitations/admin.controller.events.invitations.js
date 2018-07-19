@@ -22,7 +22,7 @@ exports.getInvitations = function(req, res, next) {
     const checkEventExistsQuery = `MATCH (event:Event{key:'${eventKey}'}) return event `
 
     const query = `MATCH (user:User)-[link:invitedTo]->(:Event{key:'${eventKey}'}) 
-                   RETURN user, link`;
+                   RE"TURN user, link`;
 
     neoSession
         .run(checkEventExistsQuery)
@@ -77,6 +77,8 @@ exports.addInvitations  = function(req, res, next) {
                                  AND NOT (user)-[:invitedTo]->(event)
                                  CREATE UNIQUE (user)-[:invitedTo {status:'pending'}]->(event) 
                                  RETURN user, event `
+    
+    console.log(addInvitationsQuery)
 
     neoSession
         .run(checkEventExistsQuery)
@@ -100,9 +102,14 @@ exports.addInvitations  = function(req, res, next) {
                         .then(results => {
                             let message = {
                                 'status': 200,
-                                'message': 'event invitations were edited!',
+                                'message': 'event invitations were added!',
                                 'event':         results.records.map(record => new ReturnEvent(record.get('event').properties).values)[0],
-                                'invited users': results.records.map(record => new ReturnUser(record.get('user').properties).values),
+                                'invited users': results.records.map(record => {
+                                    return {
+                                        user: new ReturnUser(record.get('user').properties).values,
+                                        inviteStatus: 'pending'
+                                    }
+                                }) 
                             }
                             res.status(200).send(message);
                             closeConnection()

@@ -11,7 +11,7 @@ var User = function (properties) {
         mail:       { value: properties["mail"], 		required:true },
         userName:   { value: properties["userName"], 	required:true },
         passWord:   { value: properties["passWord"], 	required:true },
-        role:       { value: properties["role"], 		required:true }
+        birthday:   { value: properties["birthday"],	required:true }   // !!! must be ISO 8601 
 
     }; 
 
@@ -49,7 +49,7 @@ var User = function (properties) {
             userKey: 			userProperties.key.value,
             message:			"sorry, unknown properties",
             unknownProperties:  unknownProperties,
-            allowedProperties : Object.keys(userProperties)
+            allowedProperties : Object.keys(userProperties)   // uncomment to return error message
         }
     }
 

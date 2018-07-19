@@ -4,10 +4,13 @@ var randomstring = require("randomstring");
 var ReturnUser = function (properties) {
 
     let userProperties = { 
-
 		key:        properties["key"],
         name:       properties["name"],
-        sirName:    properties["sirName"]
+        sirName:    properties["sirName"],
+        mail:       properties["mail"],
+        userName:   properties["userName"],
+        role:       properties["role"],
+        birthday:   properties["birthday"],
     }; 
 
     let returnUser = {

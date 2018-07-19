@@ -5,6 +5,7 @@ const neo4j 	 = require('neo4j-driver').v1;
 var neoDriver 	 = neo4j.driver("bolt://localhost:7687", neo4j.auth.basic("neo4j", "123456789"));
 var neoSession 	 = neoDriver.session();
 var User 		 = require('./model.users');
+var ReturnUser   = require('./model.users.out');
 var crypto 		 = require('crypto');
 
 
@@ -15,7 +16,7 @@ exports.listUsers = function(req, res, next) {
 		.run('MATCH (user:User) RETURN user')
 		.then(function(result){
 			result.records.forEach(function(record){
-				let user = new User(record.get('user').properties);
+				let user = new ReturnUser(record.get('user').properties);
 				delete user.values.passWord;
 				listOfUsers.push(user.values);
 			})
@@ -37,8 +38,7 @@ exports.getUser = function(req, res, next) {
 			if (result.records.length == 0) {
 				handleNoResultsResponse(req, res)
 			} else {
-				let user = result.records[0].get('user').properties;
-				delete user.passWord;
+				let user = ReturnUser(result.records[0].get('user').properties);
 				res.json(user);
 				closeConnection()
 			}
@@ -79,9 +79,7 @@ exports.createUser = function(req, res, next) {
 					.run(
 						`CREATE (user:User {user}) RETURN user`, {user: newUser.values})
 			        	.then(results => {
-							let createdUser = results.records[0].get('user').properties;
-							delete createdUser.passWord;
-
+							let createdUser = new ReturnUser(results.records[0].get('user').properties);
 			            	let message = {
 			            		'status': 200,
 			            		'message': 'user was added!',
@@ -134,7 +132,7 @@ exports.editUser = function(req, res, next) {
 				neoSession
 					.run(query)
 					.then(results => {
-						let editedUser = new User(results.records[0].get('user').properties);
+						let editedUser = new ReturnUser(results.records[0].get('user').properties);
 						delete editedUser.password;
 						let message = {
 							'status': 200,
@@ -154,6 +152,26 @@ exports.editUser = function(req, res, next) {
 			return next(err);
 			closeConnection()
 	});
+}
+
+exports.getUserActicity = function(req, res, next) {
+	
+	let userKey = req.params.userKey;
+	neoSession
+		.run("MATCH (user:User)WHERE user.key='" + userKey +  "' RETURN user")
+		.then(result => {
+			if (result.records.length == 0) {
+				handleNoResultsResponse(req, res)
+			} else {
+				let user = ReturnUser(result.records[0].get('user').properties);
+				res.json(user);
+				closeConnection()
+			}
+		})
+		.catch(function(err) {
+			return next(err);
+			closeConnection()
+		});
 }
 
 
