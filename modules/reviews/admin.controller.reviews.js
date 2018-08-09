@@ -61,6 +61,8 @@ exports.createNewReview = function(req, res, next) {
 
 	let key = req.body.properties.title.substring(0,8) + Date.now() + randomstring.generate({ length: 10, charset: 'hex'})
 	key = key.replace(/\s+/g, '')	// remove whiteSpaces
+	key = key.replace(/[^\w\s]/gi, '') // remove special characters
+	
 	newReview.values.key = key
 	
 	neoSession

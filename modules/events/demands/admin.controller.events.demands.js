@@ -15,7 +15,7 @@ const Utils 	  = require('../../utils/utils');
 const utils = new Utils();
 
 
-exports.getInviteDemands = function(req, res, next) {
+exports.getDemands = function(req, res, next) {
     const eventKey = req.params.eventKey;
     
     const checkEventExistsQuery = `MATCH (event:Event{key:'${eventKey}'}) return event `
@@ -57,7 +57,7 @@ exports.getInviteDemands = function(req, res, next) {
         })
 }
 
-exports.addInviteDemands = function(req, res, next) {
+exports.addDemands = function(req, res, next) {
     const userKeys = req.body.userKeys
     const eventKey = req.params.eventKey;
     
@@ -127,12 +127,161 @@ exports.addInviteDemands = function(req, res, next) {
         })
 }
 
-exports.changeInviteDemands = function(req, res, next) {
+exports.editDemands = function(req, res, next) {
+    const eventKey = req.params.eventKey;
+    const keysAndStatus = req.body.keysAndStatus
+    const userKeys = keysAndStatus.map(ks => ks.userKey)
+
+    if (!keysAndStatus || keysAndStatus.length <= 0 || keysAndStatus.constructor !== Array) return utils.handleBadRequestResponse(req, res,'Sorry, syntax error. Please provide an array of user keys and status')
+    
+    const queryError = (keysAndStatus).map(ks => new Demand(ks)).filter(ks => ks.error);
+    if (queryError.length > 0) return utils.handleBadRequestResponse(req, res, 'Sorry, there are syntax errors in the provided values')
+
+    const checkEventExistsQuery = `MATCH (event:Event{key:'${eventKey}'}) return event`
+    
+    const checkUsersExistsquery = `MATCH (user:User) 
+                                   WHERE user.key IN [${userKeys.map(key => `'${key}'`)}] 
+                                   RETURN user`;
+    
+    const acceptedDemands =  keysAndStatus.filter(ks => ks.inviteStatus === 'accepted').map(ks => ks.userKey);
+    const rejectedDemands =  keysAndStatus.filter(ks => ks.inviteStatus === 'rejected').map(ks => ks.userKey);
+    const pendingDemands  =  keysAndStatus.filter(ks => ks.inviteStatus === 'pending').map(ks => ks.userKey);
+    let queries = [];
+    
+    const changeAcceptedDemands = `MATCH  (user)-[rel:wishesToJoin]->(event:Event{key:'${eventKey}'}) WHERE user.key IN [${acceptedDemands.map(key => `'${key}'`)}] 
+                                       SET rel.status = "accepted"
+                                       RETURN rel, user`
+
+    const changeRejectedDemands = `MATCH  (user)-[rel:wishesToJoin]->(event:Event{key:'${eventKey}'}) WHERE user.key IN [${rejectedDemands.map(key => `'${key}'`)}] 
+                                       SET rel.status = "rejected"
+                                       RETURN rel, user`
+
+    const changePendingDemands  = `MATCH  (user)-[rel:wishesToJoin]->(event:Event{key:'${eventKey}'}) WHERE user.key IN [${pendingDemands.map(key => `'${key}'`)}] 
+                                       SET rel.status = "pending"
+                                       RETURN rel, user`        
+    
+
+    neoSession
+    .run(checkEventExistsQuery)
+    .then(result => {
+        if (result.records.length <= 0 ) {
+            utils.handleNoResultsResponse(req, res, 'Sorry, no event with this key was found')
+        } else {
+            neoSession
+            .run(checkUsersExistsquery)
+            .then(result => {
+                if (result.records.length < userKeys.length) {
+
+                    const unknownUsers = userKeys.filter(key => !result.records.map(record => record.get('user').properties.key).includes(key))
+                    const msg = {
+                        'userError': 'Sorry, some users were not found matching these keys',
+                        'unknown keys' : unknownUsers
+                    }
+                    utils.handleNoResultsResponse(req, res, msg)
+                } else {
+
+                    Promise.all([
+                        neoSession.run(changeAcceptedDemands),
+                        neoSession.run(changeRejectedDemands),
+                        neoSession.run(changePendingDemands),
+                    ])
+                    .then((results) => {
+
+                        console.log('res:', results)
+
+                        let message = {
+                            'status': 200,
+                            'message': 'event demands were changed!',
+                            'results' : {
+                                'accepted':results[0].records.map(record => new ReturnUser(record.get('user').properties).values),
+                                'rejected':results[1].records.map(record => new ReturnUser(record.get('user').properties).values),
+                                'pending':results[2].records.map(record => new ReturnUser(record.get('user').properties).values),
+                            }
+                        }
+                        res.status(200).send(message);
+                        closeConnection()
+                      })
+                      .catch(function(err) {
+                        return next(err);
+                        closeConnection()
+                    })
+                }
+            })
+            .catch( err => {
+                return next(err);
+                closeConnection()
+            });            
+        }
+    })
+    .catch( err => {
+        return next(err);
+        closeConnection()
+    });
 
 }
 
-exports.deleteInviteDemands = function(req, res, next) {
+exports.deleteDemands = function(req, res, next) {
 
+    const userKeys = req.body.userKeys
+    const eventKey = req.params.eventKey;
+    
+    if (!userKeys || userKeys.length <= 0 || userKeys.constructor !== Array) return utils.handleBadRequestResponse(req, res,'Sorry, user keys must be a non empty array');
+
+    const checkEventExistsQuery = `MATCH (event:Event{key:'${eventKey}'}) return event`
+
+    const checkUsersExistsquery = `MATCH (user:User) 
+                                   WHERE user.key IN [${userKeys.map(key => `'${key}'`)}] 
+                                   RETURN user`;
+
+
+    const deleteDemandsQuery = `MATCH  (user)-[rel:wishesToJoin]->(event:Event{key:'${eventKey}'}) WHERE user.key IN [${userKeys.map(key => `'${key}'`)}] 
+                                    DELETE rel 
+                                    RETURN user, event`
+
+    neoSession
+        .run(checkEventExistsQuery)
+        .then(result => {
+            if (result.records.length == 0) {
+				utils.handleNoResultsResponse(req, res, 'Sorry, no event with this key was found')
+			} else {
+                neoSession
+                .run(checkUsersExistsquery)
+                .then(result => {
+                    if (result.records.length < userKeys.length) {
+                        const unknownUsers = userKeys.filter(key => !result.records.map(record => record.get('user').properties.key).includes(key))
+                        const msg = {
+                            'userError': 'Sorry, some users were not found matching these keys',
+                            'unknown keys' : unknownUsers
+                        }
+                        utils.handleNoResultsResponse(req, res, msg)
+                    } else {
+                        neoSession
+                            .run(deleteDemandsQuery)
+                            .then(results => {
+                                let message = {
+                                    'message': 'event demands were deleted!',
+                                    'event':           results.records.map(record => new ReturnEvent(record.get('event').properties).values)[0],
+                                    'deleted demands': results.records.map(record => new ReturnUser(record.get('user').properties).values),
+                                }
+                                res.status(200).send(message);
+                                closeConnection()
+                            })
+                            .catch(function(err) {
+                                return next(err);
+                                closeConnection()
+                            })
+                    }
+                })
+                .catch( err => {
+                    return next(err);
+                    closeConnection()
+                });
+            }
+        })
+        .catch( err => {
+            return next(err);
+            closeConnection()
+        });
 }
 
 

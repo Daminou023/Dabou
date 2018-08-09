@@ -62,7 +62,7 @@ exports.changeCreator = function(req, res, next) {
 					.run(changeCreatorQuery)
 					.then(results => {
 						const newUser 	  = new ReturnUser(results.records[0].get('newOrganiser').properties);
-						const event = new Event(results.records[0].get('event').properties);
+						const event 	  = new ReturnEvent(results.records[0].get('event').properties);
 						let message = {
 							'status': 200,
 							'message': 'event creator was edited!',

@@ -22,7 +22,7 @@ exports.getInvitations = function(req, res, next) {
     const checkEventExistsQuery = `MATCH (event:Event{key:'${eventKey}'}) return event `
 
     const query = `MATCH (user:User)-[link:invitedTo]->(:Event{key:'${eventKey}'}) 
-                   RE"TURN user, link`;
+                   RETURN user, link`;
 
     neoSession
         .run(checkEventExistsQuery)
@@ -135,6 +135,7 @@ exports.addInvitations  = function(req, res, next) {
 
 // DELETE INVITATIONS FOR A GIVEN EVENT
 exports.deleteInvitations = function(req, res, next) {
+    console.log('in delete event invitation')
     const userKeys = req.body.userKeys
     const eventKey = req.params.eventKey;
     

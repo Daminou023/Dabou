@@ -10,8 +10,6 @@ var EventLinks = function (links, requirements) {
     }
 
     const defaultRequirements = [
-        'location',
-        'games',
         'organiser'
     ]
 
@@ -22,7 +20,6 @@ var EventLinks = function (links, requirements) {
         organiser    : links['organiser'],
         requestors   : links['requestors'],
         invitations  : links['invitations'],
-        location     : links['location'],
         games        : links['games']
     }
 

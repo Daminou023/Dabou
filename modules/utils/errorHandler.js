@@ -6,7 +6,7 @@ const ErrorHandler = function () {
             'message': customMessage ? customMessage : "sorry, nothing found!"
         }
         
-        res.status(404).send(message);
+        res.status(200).send(message);
     }
 
     function handleBadRequestResponse(req, res, customMessage) {

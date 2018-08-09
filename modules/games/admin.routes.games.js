@@ -14,9 +14,9 @@ router.route('/new')
 
 
 router.route('/:gameKey')
-  .get(AdminGamesController.getGame)
-  .put(AdminGamesController.editGame)
-	.delete(AdminGamesController.deleteGame);
+  	.get(AdminGamesController.getGame)
+  	.put(AdminGamesController.editGame)
+  	.delete(AdminGamesController.deleteGame);
 
 
 module.exports = router;

@@ -7,9 +7,13 @@ var ReturnEvent = function (properties) {
         description:            properties["description"],
         minParticipants:        properties["minParticipants"],
         maxParticipants:        properties["maxParticipants"],
+        startTime:              properties["startTime"],
+        endTime:                properties["endTime"],
         length:                 properties["length"],
         photo:                  properties["photo"],
         type:                   properties["type"],
+        adress:                 properties["adress"]
+
     }; 
 
     let returnEvent = {

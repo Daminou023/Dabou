@@ -7,7 +7,7 @@ var Game = function (properties) {
         description:            { value: properties["description"] },
         tutorial:               { value: properties["tutorial"] },
         minPlayers:             { value: properties["minPlayers"] },
-        maxPLayers:             { value: properties["maxPlayers"] },
+        maxPlayers:             { value: properties["maxPlayers"] },
         gameType:               { value: properties["gameType"] },
         gameLength:             { value: properties["gameLength"] },
         gameCharacteristic:     { value: properties["gameCharacteristic"] },

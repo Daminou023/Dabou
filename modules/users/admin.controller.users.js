@@ -62,6 +62,8 @@ exports.createUser = function(req, res, next) {
 	newUser.values.role = "user"
 	newUser.values.passWord = hashPassword(req.body.passWord);
 	newUser.values.key = req.body.userName + randomstring.generate({ length: 10, charset: 'hex'})
+	newUser.values.key = newUser.values.key.replace(/\s+/g, '')
+	newUser.values.key = newUser.values.key.replace(/[^\w\s]/gi, '')
 
 	neoSession
 			.run("MATCH (user:User)WHERE user.userName='" + newUser.values.userName +  "' RETURN user")

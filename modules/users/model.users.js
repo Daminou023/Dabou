@@ -11,6 +11,7 @@ var User = function (properties) {
         mail:       { value: properties["mail"], 		required:true },
         userName:   { value: properties["userName"], 	required:true },
         passWord:   { value: properties["passWord"], 	required:true },
+        adress:     { value: properties["adress"],      required:true },
         birthday:   { value: properties["birthday"],	required:true }   // !!! must be ISO 8601 
 
     }; 

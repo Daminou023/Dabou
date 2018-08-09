@@ -16,9 +16,11 @@ var Event = function (properties) {
         description:            { value: properties["description"],         required:true },
         minParticipants:        { value: properties["minParticipants"],     required:true },
         maxParticipants:        { value: properties["maxParticipants"],     required:true },
-        length:                 { value: properties["length"],              required:true }, 
+        startTime:              { value: properties["startTime"],           required:true },
+        endTime:                { value: properties["endTime"],             required:true },
         photo:                  { value: properties["photo"] }, 
-        type:                   { value: properties["type"],                required:true }
+        type:                   { value: properties["type"],                required:true },
+        adress:                 { value: properties["adress"],              required:true },
     }; 
 
     let returnEvent = {

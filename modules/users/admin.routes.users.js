@@ -9,6 +9,10 @@ router.route('/list')
 	.get(AdminUserController.listUsers)
 
 
+router.route('/new')
+	.post(AdminUserController.createUser);	
+
+	
 router.route('/:userKey')
 	.get(AdminUserController.getUser)
 	.put(AdminUserController.editUser)
@@ -31,9 +35,6 @@ router.route('/:userKey/friends')
 router.route('/:userKey/activity')
 	.get(AdminUserController.getUserActicity);
 
-
-router.route('/new')
-	.post(AdminUserController.createUser);
 
 router.get('/advanced', authorize, listUsers);
 

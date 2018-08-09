@@ -28,7 +28,7 @@ exports.getFriends = function(req, res, next) {
                 let user = new ReturnUser(record.get('friend').properties);
                 friends.push(user.values);
             })
-            res.status(200).send({friends})
+            res.status(200).send(friends)
         })
         .catch(err => {
             return next(err);

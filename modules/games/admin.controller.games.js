@@ -56,8 +56,13 @@ exports.createNewGame = function(req, res, next) {
 		return
 	}
 	let key = req.body.name + randomstring.generate({ length: 10, charset: 'hex'})
-	key = key.replace(/\s+/g, '')
+	
+	key = key.replace(/\s+/g, '')		// remove white space
+	key = key.replace(/[^\w\s]/gi, '')	// remove special caracters
+
 	newGame.values.key = key
+
+	// TODO: Search 
 	
 	neoSession
 			.run("MATCH (game:Game)WHERE game.name='" + newGame.values.name +  "' RETURN game")
@@ -100,15 +105,19 @@ exports.createNewGame = function(req, res, next) {
 // EDIT INFORMATION ON A SINGLE GAME
 exports.editGame = function(req, res, next) {
 	
+	let gameKey = req.params.gameKey;
 	let game = new Game(req.body);
+	
 	game.values.key = req.params.gameKey;
+	game.values.key = game.values.key.replace(/\s+/g, '')		// remove white space
+	game.values.key = game.values.key.replace(/[^\w\s]/gi, '')	// remove special caracters
 
 	if(game.error.unknownProperties) {
 		res.status(400).send(game.error);
 		return
 	}
 
-	let query = "MATCH (game:Game)WHERE game.key='" + game.values.key + "'";
+	let query = "MATCH (game:Game)WHERE game.key='" + gameKey + "'";
 	for (let property in game.values) {
 		query += `SET game.${property} ="${game.values[property]}"`;
 	}
@@ -117,7 +126,8 @@ exports.editGame = function(req, res, next) {
 	console.log(query)
 
 	neoSession
-		.run(`MATCH (game:Game)WHERE game.key= "${game.values.key}" RETURN game`)
+		// .run("MATCH (game:Game)WHERE game.key='" + gameKey +  "' RETURN game")
+		.run(`MATCH (game:Game)WHERE game.key= "${gameKey}" RETURN game`)
 		.then(result => {
 			if (result.records.length == 0) {
 				handleNoResultsResponse(req, res)

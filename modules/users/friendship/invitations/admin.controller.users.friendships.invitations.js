@@ -125,7 +125,7 @@ exports.addFriendInvite  = function(req, res, next) {
                         if (users.length > 0) {
                             let message = {
                                 'message': 'friend invitation was added!',
-                                'users': users 
+                                'users': users[0]
                             }
                             res.status(200).send(message);
                         } else {
@@ -242,7 +242,7 @@ exports.acceptOrRefuseFriendRequest = function(req, res, next) {
     .then(result => {
         if (result.records.length <= 0) {
             const msg = 'Sorry, there seems to be no friend request matching these users';
-            utils.handleNoResultsResponse(req, res, msg)
+            res.status(400).send(msg);
         } else {
             const acceptOrRefuseQuery = friendship.values.choice ? acceptRequestQuery : deleteRequestQuery ;
             console.log(acceptOrRefuseQuery)

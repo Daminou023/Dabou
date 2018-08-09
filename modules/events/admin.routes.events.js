@@ -5,7 +5,6 @@ const AdminEventsController = require('./admin.controller.events');
 const AdminEventsCreatorController = require('./creator/admin.controller.events.creator')
 const AdminEventsInvitationsController = require('./invitations/admin.controller.events.invitations')
 const AdminEventsDemandsController = require('./demands/admin.controller.events.demands')
-const AdminEventsLocationController = require('./location/admin.controller.events.location')
 const AdminEventsParticipatnsController = require('./participants/admin.controller.events.participants')
 
 
@@ -27,6 +26,12 @@ router.route('/:eventKey')
 router.route('/:eventKey/all')
   .get(AdminEventsController.getAll)
 
+/*
+router.route('/:eventKey/games')  TODO
+  .get()
+  .put()
+  .delete()
+*/
 
 router.route('/:eventKey/creator')
   .get(AdminEventsCreatorController.getCreator)     // ok
@@ -41,15 +46,10 @@ router.route('/:eventKey/invitations')
 
 
 router.route('/:eventKey/demands')
-  .get(AdminEventsDemandsController.getInviteDemands)
-  .post(AdminEventsDemandsController.addInviteDemands)
-  .put(AdminEventsDemandsController.changeInviteDemands)
-  .delete(AdminEventsDemandsController.deleteInviteDemands)
-
-
-router.route('/:eventKey/location')
-  .get(AdminEventsLocationController.getLocation)
-  .put(AdminEventsLocationController.changeLocation)
+  .get(AdminEventsDemandsController.getDemands)                    // ok
+  .post(AdminEventsDemandsController.addDemands)                   // ok 
+  .put(AdminEventsDemandsController.editDemands)                   // ok
+  .delete(AdminEventsDemandsController.deleteDemands)              // ToDo: idealy, deletion should be agnostic of invitations or demands
 
 
 router.route('/:eventKey/participants')

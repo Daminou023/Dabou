@@ -11,6 +11,7 @@ var ReturnUser = function (properties) {
         userName:   properties["userName"],
         role:       properties["role"],
         birthday:   properties["birthday"],
+        adress:     properties["adress"]
     }; 
 
     let returnUser = {
