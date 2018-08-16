@@ -224,67 +224,6 @@ exports.deleteEvent = function(req, res, next) {
 		})
 }
 
-
-exports.getAll = function(req, res, next) {
-	console.log('in gett all from event')
-	let eventKey = req.params.eventKey;
-
-	let query = `MATCH 	(event:Event{key:'${eventKey}'})
-				 WITH   event
-				 OPTIONAL MATCH  (event)-[:Proposes]->(games)
-				 OPTIONAL MATCH  (user:User)-[:Organises]-(event)
-				 OPTIONAL MATCH  (invited:User)-[:invitedTo]->(event)
-				 OPTIONAL MATCH  (requesting:User)-[:wishesToJoin]->(event) 
-						  return event, user, games, invited` 
-		
-	/*,
-				 		(event)-[:Proposes]->(Games),
-				 		(user:User)-[:Organises]-(event),
-				 		(invited:User)-[:invitedTo]->(event),
-				 		(requesting:User)-[:wishesToJoin]->(event)
-				 		return event, user, invited, requesting`
-	*/
-	neoSession
-		.run(query)
-		.then(results => {
-			console.log('records', results.records)
-
-			// let event = results.records[0].get('event').properties;
-			// let links = results.records[0].get('l').properties;
-
-			// let games = results.records.map(record => record.get('n')).filter(node => node.labels.includes('Game'))
-			
-			
-			// let organiser = results.records.map(record => record.get('n')).filter(node => node.labels.includes('Game'))
-
-			// let users = results.records.map(record => record.get('n')).filter(node => node.labels.includes('User'))
-			
-
-			/*
-			let a = results.records[0].get('n');
-			let b = results.records[1].get('n');
-			let c = results.records[2].get('n');
-
-			console.log('a',a);
-			console.log('b',b);
-			console.log('c',c);
-			
-			/*
-			console.log('event', event)
-			console.log('links', link)
-			console.log('nodes', nodes)
-			*/
-
-			res.status(200).send(results)
-		})
-		.catch(err => {
-			return next(err)
-			closeConnection();
-		})
-	
-}
-
-
 // CLOSE CONNECTION AND DRIVER TO DB
 function closeConnection() {
 	neoSession.close();

@@ -6,6 +6,7 @@ const AdminEventsCreatorController = require('./creator/admin.controller.events.
 const AdminEventsInvitationsController = require('./invitations/admin.controller.events.invitations')
 const AdminEventsDemandsController = require('./demands/admin.controller.events.demands')
 const AdminEventsParticipatnsController = require('./participants/admin.controller.events.participants')
+const AdminEventsGamesController = require('./games/admin.controller.event-games')
 
 
 // GET LIST OF EVENTS
@@ -23,15 +24,10 @@ router.route('/:eventKey')
   .delete(AdminEventsController.deleteEvent); // ok
 
 
-router.route('/:eventKey/all')
-  .get(AdminEventsController.getAll)
-
-/*
-router.route('/:eventKey/games')  TODO
-  .get()
-  .put()
-  .delete()
-*/
+router.route('/:eventKey/games')
+  .get(AdminEventsGamesController.getEventGames)        // ok
+  .post(AdminEventsGamesController.addEventGames)       // ok
+  .delete(AdminEventsGamesController.removeEventGames)  // ok
 
 router.route('/:eventKey/creator')
   .get(AdminEventsCreatorController.getCreator)     // ok
