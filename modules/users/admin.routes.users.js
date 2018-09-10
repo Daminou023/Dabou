@@ -4,6 +4,8 @@ const router = express.Router();
 const AdminUserController = require('./admin.controller.users');
 const AdminFriendShipInvitationsController = require('./friendship/invitations/admin.controller.users.friendships.invitations')
 const AdminFriendShipController = require('./friendship/friendships/admin.controller.users.frienships')
+const AdminUserEventsController = require('./events/admin.controller.users.events')
+const AdminUserGamesController  = require('./games/admin.controller.users.games') 
 
 router.route('/list')
 	.get(AdminUserController.listUsers)
@@ -17,6 +19,11 @@ router.route('/:userKey')
 	.get(AdminUserController.getUser)
 	.put(AdminUserController.editUser)
 	.delete(AdminUserController.deleteUser);
+
+router.route('/:userKey/games')
+	.get(AdminUserGamesController.listGames)
+	.post(AdminUserGamesController.addGame)
+	.delete(AdminUserGamesController.deleteGAme);	
 
 
 router.route('/:userKey/friendInvites')
@@ -35,6 +42,11 @@ router.route('/:userKey/friends')
 router.route('/:userKey/activity')
 	.get(AdminUserController.getUserActicity);
 
+router.route('/:userKey/organisedEvents')
+	.get(AdminUserEventsController.getEventsOrganisedByUser)
+
+router.route('/:userKey/participatedEvents')
+	.get(AdminUserEventsController.getEventsParticipatedBuUser)	
 
 router.get('/advanced', authorize, listUsers);
 

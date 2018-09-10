@@ -9,6 +9,13 @@ const ErrorHandler = function () {
         res.status(200).send(message);
     }
 
+    function handleUnknownInputResponse(req, res, customMessage) {
+        const message = {
+            'message': customMessage ? customMessage : "sorry, nothing found!"
+        }
+        res.status(404).send(message);   
+    }
+
     function handleBadRequestResponse(req, res, customMessage) {
         const message = {
             'message': customMessage ? customMessage : "sorry, bad request"
@@ -18,6 +25,7 @@ const ErrorHandler = function () {
     
 	return {
         handleBadRequestResponse,
+        handleUnknownInputResponse,
         handleNoResultsResponse
     }
 }

@@ -4,8 +4,9 @@ const errorHandler = new EH();
 
 const Utils = function () {
 
-    this.handleNoResultsResponse  = errorHandler.handleNoResultsResponse
-    this.handleBadRequestResponse = errorHandler.handleBadRequestResponse
+    this.handleUnknownInputResponse = errorHandler.handleUnknownInputResponse;
+    this.handleNoResultsResponse    = errorHandler.handleNoResultsResponse;
+    this.handleBadRequestResponse   = errorHandler.handleBadRequestResponse;
 }
 
 module.exports = Utils;

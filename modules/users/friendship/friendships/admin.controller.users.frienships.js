@@ -49,9 +49,8 @@ exports.addFriend  = function(req, res, next) {
                                    WHERE user.key IN [${userKeys.map(key => `'${key}'`)}] 
                                    RETURN user`;
 
-    const checkIfAlreadyFriendsQuery = `
-                                MATCH (user:User{key:'${userKey}'})-[:friendsWith]-(targetUser:User{key:'${targetUserKey}'})
-                                return user, targetUser`
+    const checkIfAlreadyFriendsQuery = ` MATCH (user:User{key:'${userKey}'})-[:friendsWith]-(targetUser:User{key:'${targetUserKey}'})
+                                         return user, targetUser`
 
     const friendRequestQuery = `MATCH (targetUser:User{key:'${targetUserKey}'}) 
                                 MATCH (user:User{key:'${userKey}'}) 
@@ -142,7 +141,7 @@ exports.deleteFriend = function(req, res, next) {
                     'userError': 'Sorry, user was not found matching this key',
                     'unknown keys' : unknownUsers
                 }
-                utils.handleNoResultsResponse(req, res, msg)
+                utils.handleUnknownInputResponse(req, res, msg)
             } else {
                 neoSession
                     .run(deleteFriendQuery)
