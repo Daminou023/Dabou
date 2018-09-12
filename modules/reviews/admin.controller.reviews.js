@@ -4,19 +4,26 @@ var randomstring  = require("randomstring");
 const neo4j 	  = require('neo4j-driver').v1;
 var neoDriver 	  = neo4j.driver("bolt://localhost:7687", neo4j.auth.basic("neo4j", "123456789"));
 var neoSession 	  = neoDriver.session();
-var Review 		  = require('./model.review');
-var ReviewLinks   = require('./model.reviewLinks');
+
+const Review 	  = require('./model.review');
+const ReviewLinks = require('./model.reviewLinks');
+const returnUser  = require('../users/model.users.out')
 
 
 // GET LIST OF ALL REVIEWS
 exports.listReviews = function(req, res, next) {
 	let listOfReviews = [];
 	neoSession
-		.run('MATCH (review:Review) RETURN review')
+		.run('MATCH (review:Review)-[]-(user:User) RETURN review, user')
 		.then(function(result){
 			result.records.forEach(function(record){
-				let review = new Review(record.get('review').properties);
-				listOfReviews.push(review.values);
+				let review = new Review(record.get('review').properties).values;
+				let user = new returnUser(record.get('user').properties).values.key;
+				listOfReviews.push({
+					review,
+					user
+				}
+				);
 			})
 			res.json(listOfReviews);
 			closeConnection()

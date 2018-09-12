@@ -18,5 +18,8 @@ router.route('/:gameKey')
   	.put(AdminGamesController.editGame)
   	.delete(AdminGamesController.deleteGame);
 
+router.route('/:gameKey/reviews')
+	.get(AdminGamesController.getGameReviews)
+	.post()
 
 module.exports = router;

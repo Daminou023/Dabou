@@ -189,6 +189,13 @@ exports.deleteGame = function(req, res, next) {
 		})
 }
 
+exports.addCommentToGame = function(req, res, next) {
+
+}
+
+exports.getGameReviews = function(req, res, next) {
+	
+}
 
 
 // HANDLE 404 RESULT ERRORS

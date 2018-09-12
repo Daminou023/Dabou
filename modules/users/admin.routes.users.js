@@ -25,6 +25,9 @@ router.route('/:userKey/games')
 	.post(AdminUserGamesController.addGame)
 	.delete(AdminUserGamesController.deleteGAme);	
 
+router.route('/:userKey/games/reviews')
+	.get(AdminUserGamesController.getUserReviews)
+
 
 router.route('/:userKey/friendInvites')
 	.get(AdminFriendShipInvitationsController.getInvitations)

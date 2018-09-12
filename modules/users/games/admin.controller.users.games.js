@@ -5,8 +5,9 @@ const neo4j 	  = require('neo4j-driver').v1;
 var neoDriver 	  = neo4j.driver("bolt://localhost:7687", neo4j.auth.basic("neo4j", "123456789"));
 var neoSession 	  = neoDriver.session();
 
-const ReturnGame  = require('../../games/model.games');
-const ReturnUser  = require('../../users/model.users.out')
+const ReturnGame   = require('../../games/model.games');
+const ReturnUser   = require('../../users/model.users.out')
+const ReturnReview = require('../../reviews/model.review')
 const Utils 	  = require('../../utils/utils');
 
 const utils = new Utils();
@@ -157,6 +158,41 @@ exports.deleteGAme = function(req, res, next) {
             return next(err);
             closeConnection()
         });
+}
+
+exports.getUserReviews = function (req, res, next) {
+    const userKey = req.params.userKey;
+    const gameKey = req.get('gameKey');
+
+    const allUserReviewsQuery = `MATCH (user:User{key:'${userKey}'})-[writing:Wrote]-(review:Review)-[:About]-(game:Game)
+                                 return writing, review, game`
+
+    const userReviewsForGame = `MATCH (user:User{key:'${userKey}'})-[writing:Wrote]-(review:Review)-[:About]-(game:Game{key:'${gameKey}'})
+                                return writing, review, game`
+
+    const userReviewsQuery = gameKey? userReviewsForGame : allUserReviewsQuery;
+
+    neoSession
+		.run(userReviewsQuery)
+		.then(results => {
+            let retvalues = [];
+            results.records.forEach(record => {
+                retvalues.push({
+                    game: new ReturnGame(record.get('game').properties).values,
+                    review: new ReturnReview(record.get('review').properties).values,
+                    reviewDate : record.get('writing').properties.when
+                })
+            })
+            let games = results.records.map(record => new ReturnGame(record.get('game').properties).values)
+
+			res.json(retvalues);
+			closeConnection()
+		})
+		.catch(function(err) {
+			return next(err);
+			closeConnection()
+		});
+
 }
 
 function closeConnection() {
