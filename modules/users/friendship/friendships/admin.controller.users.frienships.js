@@ -36,7 +36,36 @@ exports.getFriends = function(req, res, next) {
         })
 }
 
-// ADD NEW IFRIEND
+// GET FRIENDS OF FRIENDS OF A PERSON
+exports.getFriendsOfFriends = function(req, res, next) {
+    
+    let userKey = req.params.userKey;
+    console.log(userKey)
+    const friendQuery = `MATCH (user:User{key:'${userKey}'})-[:friendsWith]->(friend:User)-[:friendsWith]->(friendOfFriend:User)
+                         return user, friend, friendOfFriend`                                   
+                        
+    neoSession
+        .run(friendQuery)
+        .then(result => {
+            let closeFriends = []
+            let distantFriends = []
+
+            result.records.forEach(function(record){
+                let closeFriend = new ReturnUser(record.get('friend').properties);
+                if (!closeFriends.map(user => user.key).includes(closeFriend.values.key)) closeFriends.push(closeFriend.values)
+                let friendsOfFriends = new ReturnUser(record.get('friendOfFriend').properties);
+                if (!distantFriends.map(user => user.key).includes(friendsOfFriends.values.key)) distantFriends.push(friendsOfFriends.values)
+            })
+
+            res.status(200).send({closeFriends, distantFriends})
+        })
+        .catch(err => {
+            return next(err);
+            closeConnection()
+        })
+}
+
+// ADD NEW FRIEND
 exports.addFriend  = function(req, res, next) {
     let userKey         = req.params.userKey;
     const targetUserKey = req.body.targetUserKey

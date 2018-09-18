@@ -8,6 +8,7 @@ var neoSession 	  = neoDriver.session();
 const Review 	  = require('./model.review');
 const ReviewLinks = require('./model.reviewLinks');
 const returnUser  = require('../users/model.users.out')
+const returnGame  = require('../games/model.games')
 
 
 // GET LIST OF ALL REVIEWS
@@ -37,14 +38,22 @@ exports.listReviews = function(req, res, next) {
 // GET SPECIFIC REVIEW
 exports.getReview = function(req, res, next) {
 	let reviewKey = req.params.reviewKey;
+
+	const getReviewQuery = `MATCH (review:Review{key:'${reviewKey}'})-[]-(game:Game) return review, game`
+
 	neoSession
-		.run("MATCH (review:Review)WHERE review.key='" + reviewKey +  "' RETURN review")
+		.run(getReviewQuery)
 		.then(result => {
 			if (result.records.length == 0) {
 				handleNoResultsResponse(req, res)
 			} else {
-				let review = result.records[0].get('review').properties;
-				res.json(review);
+				let returnResults = result.records.map(record => {
+					return {
+						review: new Review(record.get('review').properties).values,
+						game: new returnGame(record.get('game').properties).values
+					}
+				})
+				res.json(returnResults);
 				closeConnection()
 			}
 		})

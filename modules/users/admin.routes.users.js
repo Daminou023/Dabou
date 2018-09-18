@@ -20,10 +20,12 @@ router.route('/:userKey')
 	.put(AdminUserController.editUser)
 	.delete(AdminUserController.deleteUser);
 
+
 router.route('/:userKey/games')
 	.get(AdminUserGamesController.listGames)
 	.post(AdminUserGamesController.addGame)
 	.delete(AdminUserGamesController.deleteGAme);	
+
 
 router.route('/:userKey/games/reviews')
 	.get(AdminUserGamesController.getUserReviews)
@@ -34,7 +36,7 @@ router.route('/:userKey/friendInvites')
 	.post(AdminFriendShipInvitationsController.addFriendInvite)
 	.delete(AdminFriendShipInvitationsController.deleteFriendRequest)
 	.put(AdminFriendShipInvitationsController.acceptOrRefuseFriendRequest);
-	
+
 
 router.route('/:userKey/friends')
 	.get(AdminFriendShipController.getFriends)
@@ -42,17 +44,23 @@ router.route('/:userKey/friends')
 	.delete(AdminFriendShipController.deleteFriend);
 
 
+router.route('/:userKey/friendsOfFriends')
+	.get(AdminFriendShipController.getFriendsOfFriends)
+
+
 router.route('/:userKey/activity')
 	.get(AdminUserController.getUserActicity);
+
 
 router.route('/:userKey/organisedEvents')
 	.get(AdminUserEventsController.getEventsOrganisedByUser)
 
+
 router.route('/:userKey/participatedEvents')
 	.get(AdminUserEventsController.getEventsParticipatedBuUser)	
 
-router.get('/advanced', authorize, listUsers);
 
+router.get('/advanced', authorize, listUsers);
 
 
 function authorize(req, res, next) {

@@ -8,11 +8,14 @@ var Game = function (properties) {
         tutorial:               { value: properties["tutorial"] },
         minPlayers:             { value: properties["minPlayers"] },
         maxPlayers:             { value: properties["maxPlayers"] },
+        maxAge:                 { value: properties["maxAge"] },
+        minAge:                 { value: properties["minAge"] },
         gameType:               { value: properties["gameType"] },
         gameLength:             { value: properties["gameLength"] },
         gameCharacteristic:     { value: properties["gameCharacteristic"] },
         gameTheme:              { value: properties["gameTheme"] },
-        gameMecanic:            { value: properties["gameMecanic"] }
+        gameMecanic:            { value: properties["gameMecanic"] },
+        vendorLink:             { value: properties["vendorLink"] }
     }; 
 
     let returnGame = {
