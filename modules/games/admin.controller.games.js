@@ -6,6 +6,9 @@ var neoDriver 	 = neo4j.driver("bolt://localhost:7687", neo4j.auth.basic("neo4j"
 var neoSession 	 = neoDriver.session();
 var Game 		 = require('./model.games');
 var crypto 		 = require('crypto');
+var ReturnGame   = require('./model.games')
+var ReturnReview = require('../reviews/model.review')
+var ReturnUser   = require('../users/model.users.out')
 
 
 // GET LIST OF ALL GAMES
@@ -189,12 +192,36 @@ exports.deleteGame = function(req, res, next) {
 		})
 }
 
-exports.addCommentToGame = function(req, res, next) {
-
-}
-
 exports.getGameReviews = function(req, res, next) {
+	let gameKey = req.params.gameKey;
 	
+	let gameReviewQuery = `MATCH (user:User)-[:Wrote]-(review:Review)-[:About]->(game:Game{key:"${gameKey}"}) 
+						   RETURN game, review, user`
+	
+	neoSession
+		.run(gameReviewQuery)
+		.then(result => {
+
+			let reviews = result.records.map(record => {
+				let review = new ReturnReview(record.get('review').properties).values;
+				let game = new ReturnGame(record.get('game').properties).values;
+				let user = new ReturnUser(record.get('user').properties).values;
+				return { review, game, user }
+			})
+
+			console.log(reviews.map(rev => rev.review.stars))
+
+			let mean = reviews
+				.map(rev => rev.review.stars)
+				.reduce((sum, toAdd) => parseInt(sum) + parseInt(toAdd))/reviews.length;
+
+			res.status(200).send({reviews, mean});
+			closeConnection();
+		})
+		.catch(function(err) {
+			return next(err);
+			closeConnection();
+	})
 }
 
 

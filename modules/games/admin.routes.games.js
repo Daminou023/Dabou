@@ -20,6 +20,5 @@ router.route('/:gameKey')
 
 router.route('/:gameKey/reviews')
 	.get(AdminGamesController.getGameReviews)
-	.post()
 
 module.exports = router;
