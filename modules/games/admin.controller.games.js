@@ -9,7 +9,9 @@ var crypto 		 = require('crypto');
 var ReturnGame   = require('./model.games')
 var ReturnReview = require('../reviews/model.review')
 var ReturnUser   = require('../users/model.users.out')
+const Utils 	 = require('../utils/utils');
 
+const utils = new Utils();
 
 // GET LIST OF ALL GAMES
 exports.listGames = function(req, res, next) {
@@ -224,6 +226,115 @@ exports.getGameReviews = function(req, res, next) {
 	})
 }
 
+exports.getGameExtensions = function(req, res, next) {
+	let gameKey = req.params.gameKey
+
+	console.log(gameKey)
+
+	const extensionsQuery = `MATCH (extension:Game)-[:Extends]->(:Game{key:'${gameKey}'}) 
+							 MATCH (game:Game{key:'${gameKey}'}) 
+							 RETURN game, extension`;
+
+	const extendedFromQuery = `MATCH (extended:Game)<-[:Extends]-(:Game{key:'${gameKey}'})
+							   MATCH (game:Game{key:'${gameKey}'})
+							   RETURN game, extended`;
+
+	Promise
+		.all([ neoSession.run(extensionsQuery), neoSession.run(extendedFromQuery)])
+		.then(([extensionResults, extendedResults]) => {
+			
+			let returnResult = {
+			 'game' : [...extensionResults.records, ...extendedResults.records].map(record => new ReturnGame(record.get('game').properties).values)[0],
+			 'extensions' : extensionResults.records.map(record => new ReturnGame(record.get('extension').properties).values),
+			 'extendedFrom' : extendedResults.records.map(record => new ReturnGame(record.get('extended').properties).values)
+			}
+			 res.json(returnResult)
+			
+		})
+		.catch(function(err) {
+			return next(err);
+			closeConnection()
+		});
+}
+
+exports.addGameExtension = function(req, res, next) {
+	const originalGameKey  = req.params.gameKey;
+	const extendingGameKey = req.body.extendingGameKey;
+	
+	// check if both keys were given.
+	if (!extendingGameKey) return utils.handleBadRequestResponse(req, res,'Sorry, no user or game key was given');
+
+	const addExtensionQuery = `MATCH (originalGame:Game{key:'${originalGameKey}'}) 
+							   MATCH (extendingGame:Game{key:'${extendingGameKey}'}) 
+							   WITH originalGame, extendingGame 
+							   CREATE UNIQUE (extendingGame)-[:Extends]->(originalGame)
+							   RETURN originalGame, extendingGame`
+
+							   console.log(addExtensionQuery)
+	
+	neoSession
+		.run(addExtensionQuery)
+		.then(result => {
+			if (result.records.length <= 0) {
+				let message = {
+					'status': 404,
+					'message': 'Oops, game or extension was not found..',							
+				}
+				res.status(404).send(message);
+			} else {
+				let game = new ReturnGame(result.records[0].get('originalGame').properties).values;
+				let extension  = new ReturnGame(result.records[0].get('extendingGame').properties).values;
+
+				res.json({game, extension});
+				closeConnection();
+			}
+		})
+		.catch(function(err) {
+			closeConnection();
+			return next(err);
+		})
+}
+
+
+
+exports.removeGameExtension = function(req, res, next) {
+	const originalGameKey = req.params.gameKey;
+	const extensionToRemoveKey = req.body.extendingGameKey;
+
+    const removeExtensionQuery = `MATCH (originalGame:Game{key:'${originalGameKey}'}) 
+							   	  MATCH (extendingGame:Game{key:'${extensionToRemoveKey}'}) 
+							      MATCH (extendingGame)-[rel:Extends]->(originalGame) 
+								  WITH originalGame, extendingGame, rel
+								  DELETE rel
+								  RETURN originalGame, extendingGame`
+	
+	neoSession
+		.run(removeExtensionQuery)
+		.then(result => {
+			if (result.records.length <= 0) {
+				let message = {
+					'status': 404,
+					'message': 'Oops, game or extension was not found..',							
+				}
+				res.status(404).send(message);
+			} else {
+				
+				let game = new ReturnGame(result.records[0].get('originalGame').properties).values;
+				let extension  = new ReturnGame(result.records[0].get('extendingGame').properties).values;
+				
+				res.json({
+					message: 'relationship was deleted',
+					game,
+					extension
+				})
+			}
+		})
+		.catch(function(err) {
+			closeConnection();
+			return next(err);
+		})
+
+}
 
 // HANDLE 404 RESULT ERRORS
 function handleNoResultsResponse(req, res) {

@@ -234,7 +234,7 @@ exports.addWishedGame = function(req, res, next) {
 
 exports.deleteWhisedGAme = function(req, res, next) {
     const userKey = req.params.userKey;
-    const gameKeys = req.body.gameKeys
+    const gameKeys = req.body.gameKeys;
 
     if (!userKey || !gameKeys) return utils.handleBadRequestResponse(req, res,'Sorry, no user or game key was given');
 
