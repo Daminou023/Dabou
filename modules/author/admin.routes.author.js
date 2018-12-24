@@ -15,14 +15,14 @@ router.route('/new')
 
 
 router.route('/:authorKey')
-    .get(AdminAuthorController.getAuthor)        
-    .put(AdminAuthorController.editAuthor)       
-    .delete(AdminAuthorController.deleteAuthor); 
+  .get(AdminAuthorController.getAuthor)        
+  .put(AdminAuthorController.editAuthor)       
+  .delete(AdminAuthorController.deleteAuthor); 
 
 
 router.route('/:authorKey/games')
   .get(AdminAuthorGamesController.getAuthorGames)      
   .post(AdminAuthorGamesController.addAuthorGames)     
-  .delete(AdminAuthorGamesController.removeAuthorGames)
+  .delete(AdminAuthorGamesController.removeAuthorGames);
 
 module.exports = router;

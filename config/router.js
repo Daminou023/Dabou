@@ -30,6 +30,7 @@ const adminLocationsRoute 	  = require('../modules/locations/admin.routes.locati
 const adminReviewsRoute 	  = require('../modules/reviews/admin.routes.reviews');
 const adminIllustratorsRoute  = require('../modules/illustrator/admin.routes.illustrator');
 const adminAuthorsRoute  	  = require('../modules/author/admin.routes.author');
+const adminEditorsRoute  	  = require('../modules/editor/admin.routes.editor');
 
 
 // USE ROUTING FROM OTHER COMPONENTS
@@ -40,6 +41,7 @@ router.use('/admin/locations', 	  adminLocationsRoute);
 router.use('/admin/reviews', 	  adminReviewsRoute);
 router.use('/admin/illustrators', adminIllustratorsRoute);
 router.use('/admin/authors', 	  adminAuthorsRoute);
+router.use('/admin/editors', 	  adminEditorsRoute);
 
 
 //  MAIN PAGE ROUTING
