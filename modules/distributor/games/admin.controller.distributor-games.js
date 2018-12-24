@@ -6,31 +6,31 @@ const neo4j 	  = require('neo4j-driver').v1;
 var neoDriver 	  = neo4j.driver("bolt://localhost:7687", neo4j.auth.basic("neo4j", "123456789"));
 var neoSession 	  = neoDriver.session();
 var Game          = require('../../games/model.games');
-var Illustrator   = require('../model.illustrator');
+var Distributor   = require('../model.distributor');
 const Utils 	  = require('../../utils/utils');
 
 const utils = new Utils();
 
-exports.getIllustratorGames = function(req, res, next) {
-    const illustratorKey = req.params.illustratorKey;
+exports.getDistributorGames = function(req, res, next) {
+    const distributorKey = req.params.distributorKey;
     
-    const checkIllustratorExistsQuery = `MATCH (illustrator:Illustrator{key:'${illustratorKey}'}) return illustrator`
-    const gamesQuery = `MATCH (illustrator:Illustrator{key:'${illustratorKey}'})-[link:Illustrated]->(games: Game) 
-                        RETURN illustrator, games`;
+    const checkDistributorExistsQuery = `MATCH (distributor:Distributor{key:'${distributorKey}'}) return distributor`
+    const gamesQuery = `MATCH (distributor:Distributor{key:'${distributorKey}'})-[link:Distributed]->(games: Game) 
+                        RETURN distributor, games`;
 
     neoSession
-    .run(checkIllustratorExistsQuery)
+    .run(checkDistributorExistsQuery)
     .then(result => {
         if (result.records.length == 0) {
-            utils.handleNoResultsResponse(req, res, 'Sorry, no illustrator with this key was found')
+            utils.handleNoResultsResponse(req, res, 'Sorry, no Distributor with this key was found')
         } else { 
-            const illustrator = new Illustrator(result.records[0].get('illustrator').properties).values
+            const distributor = new Distributor(result.records[0].get('distributor').properties).values
             neoSession
             .run(gamesQuery)
             .then(result => {
                 const response = {
                     games : result.records.map(record => record.get('games').properties),
-                    illustrator : illustrator
+                    distributor : distributor
                 }
                 res.json(response);
                 closeConnection()
@@ -47,33 +47,33 @@ exports.getIllustratorGames = function(req, res, next) {
     })    
 }
 
-exports.addIllustratorGames = function(req, res, next) {
-    const illustratorKey = req.params.illustratorKey;
+exports.addDistributorGames = function(req, res, next) {
+    const distributorKey = req.params.distributorKey;
     const gameKeys = req.body.gameKeys
     console.log('gamekeys', gameKeys)
     if (!gameKeys || gameKeys.length <= 0 || gameKeys.constructor !== Array) return utils.handleBadRequestResponse(req, res,'Sorry, game keys must be a non empty array');
 
-    const checkIllustratorExistsQuery = `MATCH (illustrator:Illustrator{key:'${illustratorKey}'}) return illustrator`
+    const checkDistributorExistsQuery = `MATCH (distributor:Distributor{key:'${distributorKey}'}) return distributor`
 
-    const addGamesQuery = `MATCH  (illustrator:Illustrator{key:'${illustratorKey}'}) 
+    const addGamesQuery = `MATCH  (distributor:Distributor{key:'${distributorKey}'}) 
                            MATCH  (games:Game) WHERE games.key IN [${gameKeys.map(key => `'${key}'`)}]
-                           AND NOT (illustrator)-[:Illustrated]->(games)
-                           CREATE UNIQUE (illustrator)-[:Illustrated]->(games) 
-                           RETURN illustrator, games `                        
+                           AND NOT (distributor)-[:Distributed]->(games)
+                           CREATE UNIQUE (distributor)-[:Distributed]->(games) 
+                           RETURN distributor, games `                        
 
     neoSession
-    .run(checkIllustratorExistsQuery)
+    .run(checkDistributorExistsQuery)
     .then(result => {
         if (result.records.length == 0) {
-            utils.handleNoResultsResponse(req, res, 'Sorry, no illustrator with this key was found')
+            utils.handleNoResultsResponse(req, res, 'Sorry, no distributor with this key was found')
         } else { 
-            const illustrator = new Illustrator(result.records[0].get('illustrator').properties).values
+            const distributor = new Distributor(result.records[0].get('distributor').properties).values
             neoSession
             .run(addGamesQuery)
             .then(result => {
                 const response = {
                     addedGames : result.records.map(record => record.get('games').properties),
-                    illustrator : illustrator
+                    distributor : distributor
                 }
                 res.json(response);
                 closeConnection()
@@ -90,31 +90,31 @@ exports.addIllustratorGames = function(req, res, next) {
     })
 }
 
-exports.removeIllustratorGames = function(req, res, next) {
-    const illustratorKey = req.params.illustratorKey;
+exports.removeDistributorGames = function(req, res, next) {
+    const distributorKey = req.params.distributorKey;
     const gameKeys = req.body.gameKeys
     if (!gameKeys || gameKeys.length <= 0 || gameKeys.constructor !== Array) return utils.handleBadRequestResponse(req, res,'Sorry, game keys must be a non empty array');
 
-    const checkIllustratorExistsQuery = `MATCH (illustrator:Illustrator{key:'${illustratorKey}'}) return illustrator`
+    const checkDistributorExistsQuery = `MATCH (distributor:Distributor{key:'${distributorKey}'}) return distributor`
 
-    const removegamesQuery = `MATCH (illustrator:Illustrator{key:'${illustratorKey}'})-[link:Illustrated]->(games: Game) 
+    const removegamesQuery = `MATCH (distributor:Distributor{key:'${distributorKey}'})-[link:Distributed]->(games: Game) 
                               WHERE games.key IN [${gameKeys.map(key => `'${key}'`)}]
                               DELETE link
-                              RETURN illustrator, games`;
+                              RETURN distributor, games`;
 
     neoSession
-    .run(checkIllustratorExistsQuery)
+    .run(checkDistributorExistsQuery)
     .then(result => {
         if (result.records.length == 0) {
-            utils.handleNoResultsResponse(req, res, 'Sorry, no illustrator with this key was found')
+            utils.handleNoResultsResponse(req, res, 'Sorry, no distributor with this key was found')
         } else { 
-            const illustrator = new Illustrator(result.records[0].get('illustrator').properties).values
+            const distributor = new Distributor(result.records[0].get('distributor').properties).values
             neoSession
             .run(removegamesQuery)
             .then(result => {
                 const response = {
                     removedGames : result.records.map(record => record.get('games').properties),
-                    illustrator : illustrator
+                    distributor : distributor
                 }
                 res.json(response);
                 closeConnection()

@@ -72,7 +72,7 @@ exports.addEditorGames = function(req, res, next) {
             .run(addGamesQuery)
             .then(result => {
                 const response = {
-                    games : result.records.map(record => record.get('games').properties),
+                    addedGames : result.records.map(record => record.get('games').properties),
                     editor : editor
                 }
                 res.json(response);
@@ -113,7 +113,7 @@ exports.removeEditorGames = function(req, res, next) {
             .run(removegamesQuery)
             .then(result => {
                 const response = {
-                    games : result.records.map(record => record.get('games').properties),
+                    removedGames : result.records.map(record => record.get('games').properties),
                     editor : editor
                 }
                 res.json(response);
