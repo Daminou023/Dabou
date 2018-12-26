@@ -16,20 +16,46 @@ const utils       = new Utils();
 exports.listBorrowedGames = function(req, res, next) {
     const userKey = req.params.userKey
 
-    const userGamesQuery = `MATCH (user:User{key:'${userKey}'})-[link:Borrowed]->(game:Game) 
-                            RETURN user, link, game`;
+    const userGamesQuery = ` MATCH (game:Game)
+                             MATCH (user:User{key:'${userKey}'})-[link:borrowedFrom {gameKey: game.key}]->(lender:User) 
+                             RETURN user, link, lender, game`;
 
-    let listOfGames = [];
 	neoSession
 		.run(userGamesQuery)
 		.then(function(result){
-            let users = 
-			result.records.forEach(function(record){
+            let games   = result.records.map(record => new ReturnGame(record.get('game').properties).values)
+            let leases = result.records.map(record => ({
+                lease:  record.get('link').properties,
+                game:   games.filter(game => game.key === record.get('link').properties.gameKey)[0],
+                lender: new ReturnUser(record.get('lender').properties).values
+            }))
+			res.json(leases);
+			closeConnection()
+		})
+		.catch(function(err) {
+			return next(err);
+			closeConnection()
+		});
+}
 
-				let game = new ReturnGame(record.get('game').properties);
-				listOfGames.push(game.values);
-			})
-			res.json(listOfGames);
+// GET GAMES FROM A GIVEN PERSON
+exports.listLendedGames = function(req, res, next) {
+    const userKey = req.params.userKey
+
+    const userGamesQuery = ` MATCH (game:Game)
+                             MATCH (user:User{key:'${userKey}'})<-[link:borrowedFrom {gameKey: game.key}]-(borrower:User) 
+                             RETURN user, link, borrower, game`;
+
+	neoSession
+		.run(userGamesQuery)
+		.then(function(result){
+            let games   = result.records.map(record => new ReturnGame(record.get('game').properties).values)
+            let leases = result.records.map(record => ({
+                lease:  record.get('link').properties,
+                game:   games.filter(game => game.key === record.get('link').properties.gameKey)[0],
+                borrower: new ReturnUser(record.get('borrower').properties).values
+            }))
+			res.json(leases);
 			closeConnection()
 		})
 		.catch(function(err) {
@@ -63,7 +89,7 @@ exports.addBorrowedGame = function(req, res, next) {
                                         WITH user, lender, game 
                                         CREATE UNIQUE (user)-[link:borrowedFrom{
                                             gameKey: '${gameKey}',
-                                            since:${new Date().getTime()},
+                                            since:'${new Date()}',
                                             until: "",
                                             returned: false
                                         }]->(lender) 

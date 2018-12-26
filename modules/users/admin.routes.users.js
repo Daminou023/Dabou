@@ -39,6 +39,10 @@ router.route('/:userKey/games/wishes')
 
 router.route('/:userKey/games/borrow')	
 	.post(AdminUserGameBorrowController.addBorrowedGame)
+	.get(AdminUserGameBorrowController.listBorrowedGames)
+
+router.route('/:userKey/games/lend')	
+	.get(AdminUserGameBorrowController.listLendedGames)
 
 router.route('/:userKey/friendInvites')
 	.get(AdminFriendShipInvitationsController.getInvitations)
