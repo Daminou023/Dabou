@@ -40,6 +40,8 @@ router.route('/:userKey/games/wishes')
 router.route('/:userKey/games/borrow')	
 	.post(AdminUserGameBorrowController.addBorrowedGame)
 	.get(AdminUserGameBorrowController.listBorrowedGames)
+	.put(AdminUserGameBorrowController.editBorrowedGame)
+	.delete(AdminUserGameBorrowController.deleteEntry)
 
 router.route('/:userKey/games/lend')	
 	.get(AdminUserGameBorrowController.listLendedGames)
