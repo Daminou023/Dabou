@@ -1,4 +1,5 @@
 import { link } from "fs";
+import Utils from '../../utils/utils'
 
 // CONFIGURE NEO4J DRIVER
 var randomstring  = require("randomstring");
@@ -7,9 +8,6 @@ var neoDriver 	  = neo4j.driver("bolt://localhost:7687", neo4j.auth.basic("neo4j
 var neoSession 	  = neoDriver.session();
 var Game          = require('../../games/model.games');
 var Distributor   = require('../model.distributor');
-const Utils 	  = require('../../utils/utils');
-
-const utils = new Utils();
 
 exports.getDistributorGames = function(req, res, next) {
     const distributorKey = req.params.distributorKey;
@@ -22,7 +20,7 @@ exports.getDistributorGames = function(req, res, next) {
     .run(checkDistributorExistsQuery)
     .then(result => {
         if (result.records.length == 0) {
-            utils.handleNoResultsResponse(req, res, 'Sorry, no Distributor with this key was found')
+            Utils.handleNoResultsResponse(req, res, 'Sorry, no Distributor with this key was found')
         } else { 
             const distributor = new Distributor(result.records[0].get('distributor').properties).values
             neoSession
@@ -51,7 +49,7 @@ exports.addDistributorGames = function(req, res, next) {
     const distributorKey = req.params.distributorKey;
     const gameKeys = req.body.gameKeys
     console.log('gamekeys', gameKeys)
-    if (!gameKeys || gameKeys.length <= 0 || gameKeys.constructor !== Array) return utils.handleBadRequestResponse(req, res,'Sorry, game keys must be a non empty array');
+    if (!gameKeys || gameKeys.length <= 0 || gameKeys.constructor !== Array) return Utils.handleBadRequestResponse(req, res,'Sorry, game keys must be a non empty array');
 
     const checkDistributorExistsQuery = `MATCH (distributor:Distributor{key:'${distributorKey}'}) return distributor`
 
@@ -65,7 +63,7 @@ exports.addDistributorGames = function(req, res, next) {
     .run(checkDistributorExistsQuery)
     .then(result => {
         if (result.records.length == 0) {
-            utils.handleNoResultsResponse(req, res, 'Sorry, no distributor with this key was found')
+            Utils.handleNoResultsResponse(req, res, 'Sorry, no distributor with this key was found')
         } else { 
             const distributor = new Distributor(result.records[0].get('distributor').properties).values
             neoSession
@@ -93,7 +91,7 @@ exports.addDistributorGames = function(req, res, next) {
 exports.removeDistributorGames = function(req, res, next) {
     const distributorKey = req.params.distributorKey;
     const gameKeys = req.body.gameKeys
-    if (!gameKeys || gameKeys.length <= 0 || gameKeys.constructor !== Array) return utils.handleBadRequestResponse(req, res,'Sorry, game keys must be a non empty array');
+    if (!gameKeys || gameKeys.length <= 0 || gameKeys.constructor !== Array) return Utils.handleBadRequestResponse(req, res,'Sorry, game keys must be a non empty array');
 
     const checkDistributorExistsQuery = `MATCH (distributor:Distributor{key:'${distributorKey}'}) return distributor`
 
@@ -106,7 +104,7 @@ exports.removeDistributorGames = function(req, res, next) {
     .run(checkDistributorExistsQuery)
     .then(result => {
         if (result.records.length == 0) {
-            utils.handleNoResultsResponse(req, res, 'Sorry, no distributor with this key was found')
+            Utils.handleNoResultsResponse(req, res, 'Sorry, no distributor with this key was found')
         } else { 
             const distributor = new Distributor(result.records[0].get('distributor').properties).values
             neoSession

@@ -6,6 +6,7 @@ import methodOverride from 'method-override';		// provide suport for DELTE and P
 import morgan from 'morgan';						// simple logger middleware
 import session from 'express-session';				// identify and track current user + session.
 import router from './router';						// routing middleware
+import passport from 'passport';                    // authentication
 
 // INITIALISE AN EXPRESS APPLICATION
 module.exports = () => {
@@ -18,6 +19,10 @@ module.exports = () => {
     } else if (process.env.NODE_ENV === 'production') {
         app.use(compress());
     }
+
+    /**
+     * REGISTER MIDDLEWARE
+     */
 
     // SESSION HANDLING:
     app.use(session({
@@ -40,6 +45,9 @@ module.exports = () => {
     // METHOD OVERRIDE:
     app.use(methodOverride());
 
+    // REGISTER MIDDLEWARE FOR AUTHENTICATION USING PASSPORT
+    app.use(passport.initialize())
+    app.use(passport.session())
 
     // APPLICATION ERROR HANDLING: (this needs to be last)
     app.use(logErrors)
@@ -47,8 +55,12 @@ module.exports = () => {
     app.use(errorHandler)
 
 
+    /**
+     * UTILITY FUNCTIONS USED IN MIDDLEWARE
+     */
+
     function logErrors (err, req, res, next) {
-    console.error(err.stack)
+        console.error(err.stack)
     next(err);
     };
 

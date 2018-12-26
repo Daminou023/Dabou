@@ -1,3 +1,5 @@
+import Utils from '../../../utils/utils'
+
 // CONFIGURE NEO4J DRIVER
 var randomstring  = require("randomstring");
 const neo4j 	  = require('neo4j-driver').v1;
@@ -7,9 +9,6 @@ var neoSession 	  = neoDriver.session();
 
 const ReturnGame   = require('../../../games/model.games');
 const ReturnUser   = require('../../../users/model.users.out')
-
-const Utils 	  = require('../../../utils/utils');
-const utils       = new Utils();
 
 
 // GET GAMES FROM A GIVEN PERSON
@@ -72,7 +71,7 @@ exports.addBorrowedGame = function(req, res, next) {
     const gameKey       = req.body.gameKey
     const userKeys      = [userKey, lenderUserKey]
 
-    if (!userKey || !lenderUserKey || !gameKey) return utils.handleBadRequestResponse(req, res,'Sorry, lenderUserKey and gameKey are needed');
+    if (!userKey || !lenderUserKey || !gameKey) return Utils.handleBadRequestResponse(req, res,'Sorry, lenderUserKey and gameKey are needed');
 
     const checkUsersExistQuery = `MATCH (user:User)
                                   WHERE user.key IN [${userKeys.map(key => `'${key}'`)}]
@@ -103,7 +102,7 @@ exports.addBorrowedGame = function(req, res, next) {
                 message: "oops, user or lender was not found.",
                 unknownUsers: unknownUsers
             }
-            utils.handleNoResultsResponse(req, res, returnObj)
+            Utils.handleNoResultsResponse(req, res, returnObj)
         } else {
             neoSession
             .run(checkGamesExistQuery)
@@ -113,7 +112,7 @@ exports.addBorrowedGame = function(req, res, next) {
                         'userError': 'Sorry, game not found matching this key',
                         'unknown key' : gameKey
                     }
-                    utils.handleNoResultsResponse(req, res, msg)
+                    Utils.handleNoResultsResponse(req, res, msg)
                 } else {
                     neoSession
                     .run(addBorrowedGameToUserQuery)
@@ -158,8 +157,8 @@ exports.editBorrowedGame = function(req, res, next) {
     const returned      = req.body.returned
     const returnDate    = req.body.returnDate
     
-    if (!["false", "true"].includes(returned)) return utils.handleBadRequestResponse(req, res, 'no valid return status given')
-    if (!borrowerKey || !gameKey || !lenderUserKey) return utils.handleBadRequestResponse(req, res,'Sorry, not enough info was given');
+    if (!["false", "true"].includes(returned)) return Utils.handleBadRequestResponse(req, res, 'no valid return status given')
+    if (!borrowerKey || !gameKey || !lenderUserKey) return Utils.handleBadRequestResponse(req, res,'Sorry, not enough info was given');
 
     const returnGameQuery = ` 
                 MATCH (user:User{key:'${borrowerKey}'})-[link:borrowedFrom {gameKey:'${gameKey}'}]->(lender:User{key:'${lenderUserKey}'})
@@ -191,7 +190,7 @@ exports.deleteEntry = function(req, res, next) {
     const gameKey       = req.body.gameKey
     const lenderUserKey = req.body.lenderUserKey
 
-    if (!borrowerKey || !gameKey || !lenderUserKey) return utils.handleBadRequestResponse(req, res,'Sorry, not enough info was given');
+    if (!borrowerKey || !gameKey || !lenderUserKey) return Utils.handleBadRequestResponse(req, res,'Sorry, not enough info was given');
 
     const returnGameQuery = ` 
                 MATCH (user:User{key:'${borrowerKey}'})-[link:borrowedFrom {gameKey:'${gameKey}'}]->(lender:User{key:'${lenderUserKey}'})
@@ -206,7 +205,7 @@ exports.deleteEntry = function(req, res, next) {
                 message: lease? 'lease was removed': "no match found"
             }
             
-            if (!lease) utils.handleNoResultsResponse(req, res, 'no lease was found')
+            if (!lease) Utils.handleNoResultsResponse(req, res, 'no lease was found')
             else {
                 res.status(200).send(returnMessage);
                 closeConnection()

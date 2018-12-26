@@ -1,4 +1,5 @@
 import { link } from "fs";
+import Utils from '../../utils/utils'
 
 // CONFIGURE NEO4J DRIVER
 var randomstring  = require("randomstring");
@@ -10,10 +11,6 @@ var EventLinks    = require('../model.eventLinks');
 const Invitation  = require('./admin.events.invitations.model')
 const ReturnUser  = require('../../users/model.users.out');
 const ReturnEvent = require('../model.event.out');
-const Utils 	  = require('../../utils/utils');
-
-const utils = new Utils();
-
 
 // GET INVITATIONS FOR A GIVEN EVENT
 exports.getInvitations = function(req, res, next) {
@@ -28,7 +25,7 @@ exports.getInvitations = function(req, res, next) {
         .run(checkEventExistsQuery)
         .then(result => {
             if (result.records.length == 0) {
-                utils.handleNoResultsResponse(req, res, 'Sorry, no event with this key was found')
+                Utils.handleNoResultsResponse(req, res, 'Sorry, no event with this key was found')
             } else { 
                 const event = new ReturnEvent(result.records[0].get('event').properties).values
                 neoSession
@@ -64,7 +61,7 @@ exports.addInvitations  = function(req, res, next) {
     const userKeys = req.body.userKeys
     const eventKey = req.params.eventKey;
     
-    if (!userKeys || userKeys.length <= 0 || userKeys.constructor !== Array) return utils.handleBadRequestResponse(req, res,'Sorry, user keys must be a non empty array');
+    if (!userKeys || userKeys.length <= 0 || userKeys.constructor !== Array) return Utils.handleBadRequestResponse(req, res,'Sorry, user keys must be a non empty array');
 
     const checkEventExistsQuery = `MATCH (event:Event{key:'${eventKey}'}) return event`
 
@@ -84,7 +81,7 @@ exports.addInvitations  = function(req, res, next) {
         .run(checkEventExistsQuery)
         .then( result => {
             if (result.records.length == 0) {
-				utils.handleNoResultsResponse(req, res, 'Sorry, no event with this key was found')
+				Utils.handleNoResultsResponse(req, res, 'Sorry, no event with this key was found')
 			} else {
                 neoSession
                 .run(checkUsersExistsquery)
@@ -95,7 +92,7 @@ exports.addInvitations  = function(req, res, next) {
                             'userError': 'Sorry, some users were not found matching these keys',
                             'unknown keys' : unknownUsers
                         }
-                        utils.handleNoResultsResponse(req, res, msg)
+                        Utils.handleNoResultsResponse(req, res, msg)
                     } else {
                         neoSession
                         .run(addInvitationsQuery)
@@ -139,7 +136,7 @@ exports.deleteInvitations = function(req, res, next) {
     const userKeys = req.body.userKeys
     const eventKey = req.params.eventKey;
     
-    if (!userKeys || userKeys.length <= 0 || userKeys.constructor !== Array) return utils.handleBadRequestResponse(req, res,'Sorry, user keys must be a non empty array');
+    if (!userKeys || userKeys.length <= 0 || userKeys.constructor !== Array) return Utils.handleBadRequestResponse(req, res,'Sorry, user keys must be a non empty array');
 
     const checkEventExistsQuery = `MATCH (event:Event{key:'${eventKey}'}) return event`
 
@@ -156,7 +153,7 @@ exports.deleteInvitations = function(req, res, next) {
         .run(checkEventExistsQuery)
         .then(result => {
             if (result.records.length == 0) {
-				utils.handleNoResultsResponse(req, res, 'Sorry, no event with this key was found')
+				Utils.handleNoResultsResponse(req, res, 'Sorry, no event with this key was found')
 			} else {
                 neoSession
                 .run(checkUsersExistsquery)
@@ -167,7 +164,7 @@ exports.deleteInvitations = function(req, res, next) {
                             'userError': 'Sorry, some users were not found matching these keys',
                             'unknown keys' : unknownUsers
                         }
-                        utils.handleNoResultsResponse(req, res, msg)
+                        Utils.handleNoResultsResponse(req, res, msg)
                     } else {
                         neoSession
                             .run(deleteInvitationsQuery)
@@ -205,10 +202,10 @@ exports.editInvitations = function(req, res, next) {
     const keysAndStatus = req.body.keysAndStatus
     const userKeys = keysAndStatus.map(ks => ks.userKey)
 
-    if (!keysAndStatus || keysAndStatus.length <= 0 || keysAndStatus.constructor !== Array) return utils.handleBadRequestResponse(req, res,'Sorry, syntax error. Please provide an array of user keys and status')
+    if (!keysAndStatus || keysAndStatus.length <= 0 || keysAndStatus.constructor !== Array) return Utils.handleBadRequestResponse(req, res,'Sorry, syntax error. Please provide an array of user keys and status')
     
     const queryError = (keysAndStatus).map(ks => new Invitation(ks)).filter(ks => ks.error);
-    if (queryError.length > 0) return utils.handleBadRequestResponse(req, res, 'Sorry, there are syntax errors in the provided values')
+    if (queryError.length > 0) return Utils.handleBadRequestResponse(req, res, 'Sorry, there are syntax errors in the provided values')
 
     const checkEventExistsQuery = `MATCH (event:Event{key:'${eventKey}'}) return event`
     
@@ -242,7 +239,7 @@ exports.editInvitations = function(req, res, next) {
     .run(checkEventExistsQuery)
     .then(result => {
         if (result.records.length <= 0 ) {
-            utils.handleNoResultsResponse(req, res, 'Sorry, no event with this key was found')
+            Utils.handleNoResultsResponse(req, res, 'Sorry, no event with this key was found')
         } else {
             neoSession
             .run(checkUsersExistsquery)
@@ -254,7 +251,7 @@ exports.editInvitations = function(req, res, next) {
                         'userError': 'Sorry, some users were not found matching these keys',
                         'unknown keys' : unknownUsers
                     }
-                    utils.handleNoResultsResponse(req, res, msg)
+                    Utils.handleNoResultsResponse(req, res, msg)
                 } else {
 
                     Promise.all([

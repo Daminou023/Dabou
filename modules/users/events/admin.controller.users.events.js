@@ -6,10 +6,6 @@ const neo4j 	  = require('neo4j-driver').v1;
 var neoDriver 	  = neo4j.driver("bolt://localhost:7687", neo4j.auth.basic("neo4j", "123456789"));
 var neoSession 	  = neoDriver.session();
 const ReturnEvent = require('../../events/model.event.out');
-const Utils 	  = require('../../utils/utils');
-
-const utils = new Utils();
-
 
 exports.getEventsOrganisedByUser = function(req, res, next) {
     const userKey = req.params.userKey

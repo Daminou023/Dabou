@@ -1,4 +1,5 @@
 import { link } from "fs";
+import Utils from '../../../utils/utils'
 
 // CONFIGURE NEO4J DRIVER
 var randomstring  = require("randomstring");
@@ -7,10 +8,6 @@ var neoDriver 	  = neo4j.driver("bolt://localhost:7687", neo4j.auth.basic("neo4j
 var neoSession 	  = neoDriver.session();
 const Friendship  = require('./admin.friendships.invitations.model')
 const ReturnUser  = require('../../../users/model.users.out');
-const Utils 	  = require('../../../utils/utils');
-
-const utils = new Utils();
-
 
 // GET INVITATIONS FOR A GIVEN PERSON (ALL SENT AND RECEIVED)
 
@@ -79,7 +76,7 @@ exports.addFriendInvite  = function(req, res, next) {
     const userKeys      = [userKey, targetUserKey]
 
     
-    if (!targetUserKey) return utils.handleBadRequestResponse(req, res,'Sorry, no user key given');
+    if (!targetUserKey) return Utils.handleBadRequestResponse(req, res,'Sorry, no user key given');
 
     const checkUsersExistsquery = `MATCH (user:User) 
                                    WHERE user.key IN [${userKeys.map(key => `'${key}'`)}] 
@@ -107,7 +104,7 @@ exports.addFriendInvite  = function(req, res, next) {
                 'userError': 'Sorry, user not found matching this key',
                 'unknown keys' : unknownUsers
             }
-            utils.handleNoResultsResponse(req, res, msg)
+            Utils.handleNoResultsResponse(req, res, msg)
         } else {
             neoSession
             .run(checkIfAlreadyFriendsQuery)
@@ -163,7 +160,7 @@ exports.deleteFriendRequest = function(req, res, next) {
     const targetUserKey = req.body.targetUserKey
     const userKeys      = [userKey, targetUserKey]
     
-    if (!userKey || !targetUserKey) return utils.handleBadRequestResponse(req, res,'Sorry, no user or target user key was given');
+    if (!userKey || !targetUserKey) return Utils.handleBadRequestResponse(req, res,'Sorry, no user or target user key was given');
 
     const checkUsersExistsquery = `MATCH (user:User) 
                                    WHERE user.key IN [${userKeys.map(key => `'${key}'`)}] 
@@ -182,7 +179,7 @@ exports.deleteFriendRequest = function(req, res, next) {
                     'userError': 'Sorry, user was not found matching this key',
                     'unknown keys' : unknownUsers
                 }
-                utils.handleNoResultsResponse(req, res, msg)
+                Utils.handleNoResultsResponse(req, res, msg)
             } else {
                 neoSession
                     .run(deleteInvitationsQuery)

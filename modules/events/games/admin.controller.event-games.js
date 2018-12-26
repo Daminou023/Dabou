@@ -1,4 +1,5 @@
 import { link } from "fs";
+import Utils from '../../utils/utils'
 
 // CONFIGURE NEO4J DRIVER
 var randomstring  = require("randomstring");
@@ -6,9 +7,6 @@ const neo4j 	  = require('neo4j-driver').v1;
 var neoDriver 	  = neo4j.driver("bolt://localhost:7687", neo4j.auth.basic("neo4j", "123456789"));
 var neoSession 	  = neoDriver.session();
 var ReturnEvent   = require('../model.event.out');
-
-const Utils 	  = require('../../utils/utils');
-const utils = new Utils();
 
 exports.getEventGames = function(req, res, next) {
     const eventKey = req.params.eventKey;
@@ -22,7 +20,7 @@ exports.getEventGames = function(req, res, next) {
     .run(checkEventExistsQuery)
     .then(result => {
         if (result.records.length == 0) {
-            utils.handleNoResultsResponse(req, res, 'Sorry, no event with this key was found')
+            Utils.handleNoResultsResponse(req, res, 'Sorry, no event with this key was found')
         } else { 
             const event = new ReturnEvent(result.records[0].get('event').properties).values
             neoSession
@@ -50,7 +48,7 @@ exports.getEventGames = function(req, res, next) {
 exports.addEventGames = function(req, res, next) {
     const eventKey = req.params.eventKey;
     const gameKeys = req.body.gameKeys
-    if (!gameKeys || gameKeys.length <= 0 || gameKeys.constructor !== Array) return utils.handleBadRequestResponse(req, res,'Sorry, game keys must be a non empty array');
+    if (!gameKeys || gameKeys.length <= 0 || gameKeys.constructor !== Array) return Utils.handleBadRequestResponse(req, res,'Sorry, game keys must be a non empty array');
 
     const checkEventExistsQuery = `MATCH (event:Event{key:'${eventKey}'}) return event `
 
@@ -66,7 +64,7 @@ exports.addEventGames = function(req, res, next) {
     .run(checkEventExistsQuery)
     .then(result => {
         if (result.records.length == 0) {
-            utils.handleNoResultsResponse(req, res, 'Sorry, no event with this key was found')
+            Utils.handleNoResultsResponse(req, res, 'Sorry, no event with this key was found')
         } else { 
             const event = new ReturnEvent(result.records[0].get('event').properties).values
             neoSession
@@ -94,7 +92,7 @@ exports.addEventGames = function(req, res, next) {
 exports.removeEventGames = function(req, res, next) {
     const eventKey = req.params.eventKey;
     const gameKeys = req.body.gameKeys
-    if (!gameKeys || gameKeys.length <= 0 || gameKeys.constructor !== Array) return utils.handleBadRequestResponse(req, res,'Sorry, game keys must be a non empty array');
+    if (!gameKeys || gameKeys.length <= 0 || gameKeys.constructor !== Array) return Utils.handleBadRequestResponse(req, res,'Sorry, game keys must be a non empty array');
 
     const checkEventExistsQuery = `MATCH (event:Event{key:'${eventKey}'}) return event `
 
@@ -108,7 +106,7 @@ exports.removeEventGames = function(req, res, next) {
     .run(checkEventExistsQuery)
     .then(result => {
         if (result.records.length == 0) {
-            utils.handleNoResultsResponse(req, res, 'Sorry, no event with this key was found')
+            Utils.handleNoResultsResponse(req, res, 'Sorry, no event with this key was found')
         } else { 
             const event = new ReturnEvent(result.records[0].get('event').properties).values
             neoSession

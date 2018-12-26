@@ -1,4 +1,5 @@
 import { link } from "fs";
+import Utils from '../../utils/utils'
 
 // CONFIGURE NEO4J DRIVER
 var randomstring  = require("randomstring");
@@ -9,9 +10,6 @@ const Event 	  = require('../model.event');
 const EventLinks  = require('../model.eventLinks');
 const ReturnUser  = require('../../users/model.users.out');
 const ReturnEvent = require('../model.event.out');
-const Utils 	  = require('../../utils/utils');
-
-const utils = new Utils();
 
 exports.getCreator = function(req, res, next) {
     const eventKey = req.params.eventKey;
@@ -43,7 +41,7 @@ exports.changeCreator = function(req, res, next) {
 	const creatorKey = req.body.creatorKey;
 	const eventKey = req.params.eventKey;
 	
-	if (!creatorKey) return utils.handleBadRequestResponse(req, res,'Sorry, no creator key was given');
+	if (!creatorKey) return Utils.handleBadRequestResponse(req, res,'Sorry, no creator key was given');
 	
 
 	const checkCreatorExistsquery = `MATCH (organiser:User{key:'${creatorKey}'}) RETURN organiser`;
@@ -56,7 +54,7 @@ exports.changeCreator = function(req, res, next) {
 		.run(checkCreatorExistsquery)
 		.then(result => {
 			if (result.records.length == 0) {
-				utils.handleNoResultsResponse(req, res, 'Sorry, there is no creator that matches this key')
+				Utils.handleNoResultsResponse(req, res, 'Sorry, there is no creator that matches this key')
 			} else {
 				neoSession
 					.run(changeCreatorQuery)

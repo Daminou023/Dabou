@@ -1,4 +1,5 @@
 import { link } from "fs";
+import Utils from '../../utils/utils'
 
 // CONFIGURE NEO4J DRIVER
 var randomstring  = require("randomstring");
@@ -7,9 +8,6 @@ var neoDriver 	  = neo4j.driver("bolt://localhost:7687", neo4j.auth.basic("neo4j
 var neoSession 	  = neoDriver.session();
 var Game          = require('../../games/model.games');
 var Editor        = require('../model.editor');
-const Utils 	  = require('../../utils/utils');
-
-const utils = new Utils();
 
 exports.getEditorGames = function(req, res, next) {
     const editorKey = req.params.editorKey;
@@ -22,7 +20,7 @@ exports.getEditorGames = function(req, res, next) {
     .run(checkEditorExistsQuery)
     .then(result => {
         if (result.records.length == 0) {
-            utils.handleNoResultsResponse(req, res, 'Sorry, no Editor with this key was found')
+            Utils.handleNoResultsResponse(req, res, 'Sorry, no Editor with this key was found')
         } else { 
             const editor = new Editor(result.records[0].get('editor').properties).values
             neoSession
@@ -51,7 +49,7 @@ exports.addEditorGames = function(req, res, next) {
     const editorKey = req.params.editorKey;
     const gameKeys = req.body.gameKeys
     console.log('gamekeys', gameKeys)
-    if (!gameKeys || gameKeys.length <= 0 || gameKeys.constructor !== Array) return utils.handleBadRequestResponse(req, res,'Sorry, game keys must be a non empty array');
+    if (!gameKeys || gameKeys.length <= 0 || gameKeys.constructor !== Array) return Utils.handleBadRequestResponse(req, res,'Sorry, game keys must be a non empty array');
 
     const checkEditorExistsQuery = `MATCH (editor:Editor{key:'${editorKey}'}) return editor`
 
@@ -65,7 +63,7 @@ exports.addEditorGames = function(req, res, next) {
     .run(checkEditorExistsQuery)
     .then(result => {
         if (result.records.length == 0) {
-            utils.handleNoResultsResponse(req, res, 'Sorry, no editor with this key was found')
+            Utils.handleNoResultsResponse(req, res, 'Sorry, no editor with this key was found')
         } else { 
             const editor = new Editor(result.records[0].get('editor').properties).values
             neoSession
@@ -93,7 +91,7 @@ exports.addEditorGames = function(req, res, next) {
 exports.removeEditorGames = function(req, res, next) {
     const editorKey = req.params.editorKey;
     const gameKeys = req.body.gameKeys
-    if (!gameKeys || gameKeys.length <= 0 || gameKeys.constructor !== Array) return utils.handleBadRequestResponse(req, res,'Sorry, game keys must be a non empty array');
+    if (!gameKeys || gameKeys.length <= 0 || gameKeys.constructor !== Array) return Utils.handleBadRequestResponse(req, res,'Sorry, game keys must be a non empty array');
 
     const checkEditorExistsQuery = `MATCH (editor:Editor{key:'${editorKey}'}) return editor`
 
@@ -106,7 +104,7 @@ exports.removeEditorGames = function(req, res, next) {
     .run(checkEditorExistsQuery)
     .then(result => {
         if (result.records.length == 0) {
-            utils.handleNoResultsResponse(req, res, 'Sorry, no editor with this key was found')
+            Utils.handleNoResultsResponse(req, res, 'Sorry, no editor with this key was found')
         } else { 
             const editor = new Editor(result.records[0].get('editor').properties).values
             neoSession

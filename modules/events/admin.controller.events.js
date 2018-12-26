@@ -1,4 +1,5 @@
 import { link } from "fs";
+import Utils from '../utils/utils'
 
 // CONFIGURE NEO4J DRIVER
 var randomstring  = require("randomstring");
@@ -7,9 +8,6 @@ var neoDriver 	  = neo4j.driver("bolt://localhost:7687", neo4j.auth.basic("neo4j
 var neoSession 	  = neoDriver.session();
 var Event 		  = require('./model.event');
 var EventLinks    = require('./model.eventLinks');
-const Utils 	  = require('../utils/utils');
-
-const utils = new Utils();
 
 // GET LIST OF ALL EVENTS
 exports.listEvents = function(req, res, next) {
@@ -37,7 +35,7 @@ exports.getEvent = function(req, res, next) {
 		.run("MATCH (event:Event)WHERE event.key='" + eventKey +  "' RETURN event")
 		.then(result => {
 			if (result.records.length == 0) {
-				utils.handleNoResultsResponse(req, res, 'Sorry, no event was found matching taht key')
+				Utils.handleNoResultsResponse(req, res, 'Sorry, no event was found matching taht key')
 			} else {
 				let event = result.records[0].get('event').properties;
 				res.json(event);
@@ -87,7 +85,7 @@ exports.createNewEvent = function(req, res, next) {
 			.run("MATCH (event:Event)WHERE event.key='" + newEvent.values.key +  "' RETURN event")
 			.then(results => {
 				if (results.records.length > 0) {
-					utils.handleBadRequestResponse(req, res,'sorry, somehow this key is already taken!');
+					Utils.handleBadRequestResponse(req, res,'sorry, somehow this key is already taken!');
 				}
 				else {
 
@@ -118,7 +116,7 @@ exports.createNewEvent = function(req, res, next) {
 						request , {event: newEvent.values})
 			        	.then(results => {
 							if(results.records.length <= 0) {
-								utils.handleNoResultsResponse(req, res, 'Sorry, user, games or location was not found')
+								Utils.handleNoResultsResponse(req, res, 'Sorry, user, games or location was not found')
 							} else {
 
 							let createdEvent = results.records[0].get('event').properties;
@@ -168,7 +166,7 @@ exports.editEvent = function(req, res, next) {
 		.run(`MATCH (event:Event)WHERE event.key= "${event.values.key}" RETURN event`)
 		.then(result => {
 			if (result.records.length == 0) {
-				utils.handleNoResultsResponse(req, res, 'Sorry, there is no event that matches this key')
+				Utils.handleNoResultsResponse(req, res, 'Sorry, there is no event that matches this key')
 			} else {
 				neoSession
 					.run(query)
@@ -211,7 +209,7 @@ exports.deleteEvent = function(req, res, next) {
 		)
 		.then(results => {
 			if (results.records.length <= 0) {
-				utils.handleNoResultsResponse(req, res, 'Sorry, there is no event that matches this key')
+				Utils.handleNoResultsResponse(req, res, 'Sorry, there is no event that matches this key')
 				closeConnection();
 			} else {
 			res.status(200).send('event was deleted!');

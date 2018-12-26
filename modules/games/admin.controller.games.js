@@ -1,3 +1,4 @@
+import Utils from '../utils/utils'
 
 // CONFIGURE NEO4J DRIVER
 var randomstring = require("randomstring");
@@ -9,9 +10,6 @@ var crypto 		 = require('crypto');
 var ReturnGame   = require('./model.games')
 var ReturnReview = require('../reviews/model.review')
 var ReturnUser   = require('../users/model.users.out')
-const Utils 	 = require('../utils/utils');
-
-const utils = new Utils();
 
 // GET LIST OF ALL GAMES
 exports.listGames = function(req, res, next) {
@@ -262,7 +260,7 @@ exports.addGameExtension = function(req, res, next) {
 	const extendingGameKey = req.body.extendingGameKey;
 	
 	// check if both keys were given.
-	if (!extendingGameKey) return utils.handleBadRequestResponse(req, res,'Sorry, no user or game key was given');
+	if (!extendingGameKey) return Utils.handleBadRequestResponse(req, res,'Sorry, no user or game key was given');
 
 	const addExtensionQuery = `MATCH (originalGame:Game{key:'${originalGameKey}'}) 
 							   MATCH (extendingGame:Game{key:'${extendingGameKey}'}) 

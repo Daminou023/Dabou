@@ -1,4 +1,5 @@
 import { link } from "fs";
+import Utils from '../../utils/utils'
 
 // CONFIGURE NEO4J DRIVER
 var randomstring  = require("randomstring");
@@ -7,9 +8,6 @@ var neoDriver 	  = neo4j.driver("bolt://localhost:7687", neo4j.auth.basic("neo4j
 var neoSession 	  = neoDriver.session();
 var Game          = require('../../games/model.games');
 var Illustrator   = require('../model.illustrator');
-const Utils 	  = require('../../utils/utils');
-
-const utils = new Utils();
 
 exports.getIllustratorGames = function(req, res, next) {
     const illustratorKey = req.params.illustratorKey;
@@ -22,7 +20,7 @@ exports.getIllustratorGames = function(req, res, next) {
     .run(checkIllustratorExistsQuery)
     .then(result => {
         if (result.records.length == 0) {
-            utils.handleNoResultsResponse(req, res, 'Sorry, no illustrator with this key was found')
+            Utils.handleNoResultsResponse(req, res, 'Sorry, no illustrator with this key was found')
         } else { 
             const illustrator = new Illustrator(result.records[0].get('illustrator').properties).values
             neoSession
@@ -51,7 +49,7 @@ exports.addIllustratorGames = function(req, res, next) {
     const illustratorKey = req.params.illustratorKey;
     const gameKeys = req.body.gameKeys
     console.log('gamekeys', gameKeys)
-    if (!gameKeys || gameKeys.length <= 0 || gameKeys.constructor !== Array) return utils.handleBadRequestResponse(req, res,'Sorry, game keys must be a non empty array');
+    if (!gameKeys || gameKeys.length <= 0 || gameKeys.constructor !== Array) return Utils.handleBadRequestResponse(req, res,'Sorry, game keys must be a non empty array');
 
     const checkIllustratorExistsQuery = `MATCH (illustrator:Illustrator{key:'${illustratorKey}'}) return illustrator`
 
@@ -65,7 +63,7 @@ exports.addIllustratorGames = function(req, res, next) {
     .run(checkIllustratorExistsQuery)
     .then(result => {
         if (result.records.length == 0) {
-            utils.handleNoResultsResponse(req, res, 'Sorry, no illustrator with this key was found')
+            Utils.handleNoResultsResponse(req, res, 'Sorry, no illustrator with this key was found')
         } else { 
             const illustrator = new Illustrator(result.records[0].get('illustrator').properties).values
             neoSession
@@ -93,7 +91,7 @@ exports.addIllustratorGames = function(req, res, next) {
 exports.removeIllustratorGames = function(req, res, next) {
     const illustratorKey = req.params.illustratorKey;
     const gameKeys = req.body.gameKeys
-    if (!gameKeys || gameKeys.length <= 0 || gameKeys.constructor !== Array) return utils.handleBadRequestResponse(req, res,'Sorry, game keys must be a non empty array');
+    if (!gameKeys || gameKeys.length <= 0 || gameKeys.constructor !== Array) return Utils.handleBadRequestResponse(req, res,'Sorry, game keys must be a non empty array');
 
     const checkIllustratorExistsQuery = `MATCH (illustrator:Illustrator{key:'${illustratorKey}'}) return illustrator`
 
@@ -106,7 +104,7 @@ exports.removeIllustratorGames = function(req, res, next) {
     .run(checkIllustratorExistsQuery)
     .then(result => {
         if (result.records.length == 0) {
-            utils.handleNoResultsResponse(req, res, 'Sorry, no illustrator with this key was found')
+            Utils.handleNoResultsResponse(req, res, 'Sorry, no illustrator with this key was found')
         } else { 
             const illustrator = new Illustrator(result.records[0].get('illustrator').properties).values
             neoSession

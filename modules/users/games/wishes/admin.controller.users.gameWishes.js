@@ -1,3 +1,5 @@
+import Utils from '../../../utils/utils'
+
 // CONFIGURE NEO4J DRIVER
 var randomstring  = require("randomstring");
 const neo4j 	  = require('neo4j-driver').v1;
@@ -8,9 +10,6 @@ var neoSession 	  = neoDriver.session();
 const ReturnGame   = require('../../../games/model.games');
 const ReturnUser   = require('../../../users/model.users.out')
 const ReturnReview = require('../../../reviews/model.review')
-const Utils 	   = require('../../../utils/utils');
-
-const utils = new Utils();
 
 // GET WISHED GAMES FROM A GIVEN PERSON
 exports.listWishedGames = function(req, res, next) {
@@ -41,7 +40,7 @@ exports.addWishedGame = function(req, res, next) {
     const userKey  = req.params.userKey
     const gameKeys = req.body.gameKeys
 
-    if (!userKey || !gameKeys) return utils.handleBadRequestResponse(req, res,'Sorry, no user or game key was given');
+    if (!userKey || !gameKeys) return Utils.handleBadRequestResponse(req, res,'Sorry, no user or game key was given');
 
     const checkUserExistsQuery = `MATCH (user:User{key:'${userKey}'})
                                    RETURN user`;
@@ -63,7 +62,7 @@ exports.addWishedGame = function(req, res, next) {
     .then(result => {
         if (result.records.length <= 0) {
             const msg = ('no user with this key found')
-            utils.handleNoResultsResponse(req, res, msg)
+            Utils.handleNoResultsResponse(req, res, msg)
         } else {
             neoSession
             .run(checkGamesExistQuery)
@@ -74,7 +73,7 @@ exports.addWishedGame = function(req, res, next) {
                         'userError': 'Sorry, game not found matching this key',
                         'unknown keys' : unknownGames
                     }
-                    utils.handleNoResultsResponse(req, res, msg)
+                    Utils.handleNoResultsResponse(req, res, msg)
                 } else {
                     neoSession
                     .run(addGameToUserQuery)
@@ -110,7 +109,7 @@ exports.deleteWhisedGAme = function(req, res, next) {
     const userKey = req.params.userKey;
     const gameKeys = req.body.gameKeys
 
-    if (!userKey || !gameKeys) return utils.handleBadRequestResponse(req, res,'Sorry, no user or game key was given');
+    if (!userKey || !gameKeys) return Utils.handleBadRequestResponse(req, res,'Sorry, no user or game key was given');
 
     const checkGamesExistsquery = `MATCH (game:Game) 
                                    WHERE game.key IN [${gameKeys.map(key => `'${key}'`)}] 
@@ -129,7 +128,7 @@ exports.deleteWhisedGAme = function(req, res, next) {
             if (result.records.length < gameKeys.length) {
                 const unknownGames = gameKeys.filter(key => !result.records.map(record => record.get('game').properties.key).includes(key))
                 const msg = `Sorry, game was not found matching these keys: ${unknownGames}`
-                utils.handleUnknownInputResponse(req, res, msg)
+                Utils.handleUnknownInputResponse(req, res, msg)
             } else {
                 neoSession
                     .run(deleteUserGameQuery)

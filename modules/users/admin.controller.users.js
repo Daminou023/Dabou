@@ -1,12 +1,12 @@
+import User  from './user.model'
+import Utils from '../utils/utils'
 
 // CONFIGURE NEO4J DRIVER
-var randomstring = require("randomstring");
-const neo4j 	 = require('neo4j-driver').v1;
-var neoDriver 	 = neo4j.driver("bolt://localhost:7687", neo4j.auth.basic("neo4j", "123456789"));
-var neoSession 	 = neoDriver.session();
-var User 		 = require('./model.users');
-var ReturnUser   = require('./model.users.out');
-var crypto 		 = require('crypto');
+const randomstring 	= require("randomstring");
+const neo4j 	 	= require('neo4j-driver').v1;
+const neoDriver 	= neo4j.driver("bolt://localhost:7687", neo4j.auth.basic("neo4j", "123456789"));
+const neoSession 	= neoDriver.session();
+const crypto 		= require('crypto');
 
 
 // GET LIST OF ALL USERS
@@ -16,9 +16,8 @@ exports.listUsers = function(req, res, next) {
 		.run('MATCH (user:User) RETURN user')
 		.then(function(result){
 			result.records.forEach(function(record){
-				let user = new ReturnUser(record.get('user').properties);
-				delete user.values.passWord;
-				listOfUsers.push(user.values);
+				let user = new User(record.get('user').properties);
+				listOfUsers.push(user.filterOutputValues());
 			})
 			res.json(listOfUsers);
 			closeConnection()
@@ -38,8 +37,8 @@ exports.getUser = function(req, res, next) {
 			if (result.records.length == 0) {
 				handleNoResultsResponse(req, res)
 			} else {
-				let user = ReturnUser(result.records[0].get('user').properties);
-				res.json(user);
+				let user = new User(result.records[0].get('user').properties);
+				res.json(user.filterOutputValues());
 				closeConnection()
 			}
 		})
@@ -53,17 +52,27 @@ exports.getUser = function(req, res, next) {
 exports.createUser = function(req, res, next) {
 
 	let newUser = new User(req.body)
-	
+
 	if (newUser.error) {
 		res.status(400).send(newUser.error);
 		return
+	} else {
+		newUser.register( user => {
+			res.status(200).send({
+				message:'user was created',
+				newUser: user
+			})
+		}, err => {
+			return next(err);
+			closeConnection()
+		})
 	}
-	
+}
+	/*
+
 	newUser.values.role = "user"
 	newUser.values.passWord = hashPassword(req.body.passWord);
-	newUser.values.key = req.body.userName + randomstring.generate({ length: 10, charset: 'hex'})
-	newUser.values.key = newUser.values.key.replace(/\s+/g, '')
-	newUser.values.key = newUser.values.key.replace(/[^\w\s]/gi, '')
+	
 
 	neoSession
 			.run("MATCH (user:User)WHERE user.userName='" + newUser.values.userName +  "' RETURN user")
@@ -101,7 +110,7 @@ exports.createUser = function(req, res, next) {
 				closeConnection();
 			});
 }
-
+	*/
 
 // EDIT INFORMATION ON A SINGLE USER
 exports.editUser = function(req, res, next) {
@@ -214,14 +223,7 @@ function handleNoResultsResponse(req, res) {
 	res.send(message, 404);
 }
 
-// CRYPTOGRAPHY: HASH PASSWORD USING THE USERNAME AND PASSWORD
-function hashPassword(password) {
-	if(password){
-		var s = 'milcampsSalt:' + password;
-		return crypto.createHash('sha256').update(s).digest('hex');
-	}
-	return undefined;
-}
+
 
 
 // CLOSE CONNECTION AND DRIVER TO DB
