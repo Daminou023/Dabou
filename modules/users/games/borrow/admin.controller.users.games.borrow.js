@@ -195,19 +195,22 @@ exports.deleteEntry = function(req, res, next) {
 
     const returnGameQuery = ` 
                 MATCH (user:User{key:'${borrowerKey}'})-[link:borrowedFrom {gameKey:'${gameKey}'}]->(lender:User{key:'${lenderUserKey}'})
-                DETATCH DELETE link
+                DETACH DELETE link
                 RETURN link`
     
     neoSession
         .run(returnGameQuery)
         .then(result => {
-            let lease = result.records.map(record => record.get('link').properties)
+            let lease = result.records.map(record => record.get('link').properties)[0]
             let returnMessage = {
-                message: lease? 'lease was removed': "no match found",
-                lease: lease
+                message: lease? 'lease was removed': "no match found"
             }
-            res.status(200).send(returnMessage);
-            closeConnection()
+            
+            if (!lease) utils.handleNoResultsResponse(req, res, 'no lease was found')
+            else {
+                res.status(200).send(returnMessage);
+                closeConnection()
+            }
         })
         .catch( err => {
             return next(err);
