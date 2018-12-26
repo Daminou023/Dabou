@@ -7,6 +7,7 @@ const AdminFriendShipController = require('./friendship/friendships/admin.contro
 const AdminUserEventsController = require('./events/admin.controller.users.events')
 const AdminUserGamesController  = require('./games/library/admin.controller.users.games') 
 const AdminUserGameWishesController = require('./games/wishes/admin.controller.users.gameWishes')
+const AdminUserGameBorrowController = require('./games/borrow/admin.controller.users.games.borrow')
 
 router.route('/list')
 	.get(AdminUserController.listUsers)
@@ -31,11 +32,13 @@ router.route('/:userKey/games')
 router.route('/:userKey/games/reviews')
 	.get(AdminUserGamesController.getUserReviews)
 
-router.route('/:userKey/wishes')
+router.route('/:userKey/games/wishes')
 	.get(AdminUserGameWishesController.listWishedGames)
 	.post(AdminUserGameWishesController.addWishedGame)
 	.delete(AdminUserGameWishesController.deleteWhisedGAme);	
 
+router.route('/:userKey/games/borrow')	
+	.post(AdminUserGameBorrowController.addBorrowedGame)
 
 router.route('/:userKey/friendInvites')
 	.get(AdminFriendShipInvitationsController.getInvitations)
