@@ -1,5 +1,6 @@
 import { link } from "fs";
 import Utils from '../../utils/utils'
+import User  from '../../users/model.user'
 
 // CONFIGURE NEO4J DRIVER
 var randomstring  = require("randomstring");
@@ -8,7 +9,6 @@ const neoDriver   = neo4j.driver("bolt://localhost:7687", neo4j.auth.basic("neo4
 const neoSession  = neoDriver.session();
 const Event 	  = require('../model.event');
 const EventLinks  = require('../model.eventLinks');
-const ReturnUser  = require('../../users/model.users.out');
 const ReturnEvent = require('../model.event.out');
 
 exports.getCreator = function(req, res, next) {
@@ -22,7 +22,7 @@ exports.getCreator = function(req, res, next) {
 			} else {
                 const response = result.records.map(record => {
                     return {
-						organiser: new ReturnUser(record.get('organiser').properties).values,
+						organiser: User.create(record.get('organiser').properties).outputValues,
 						event: new ReturnEvent (record.get('event').properties).values
                     }
                 });
@@ -59,12 +59,12 @@ exports.changeCreator = function(req, res, next) {
 				neoSession
 					.run(changeCreatorQuery)
 					.then(results => {
-						const newUser 	  = new ReturnUser(results.records[0].get('newOrganiser').properties);
+						const newUser 	  = User.create(results.records[0].get('newOrganiser').properties).outputValues;
 						const event 	  = new ReturnEvent(results.records[0].get('event').properties);
 						let message = {
 							'status': 200,
 							'message': 'event creator was edited!',
-							'new organizer': newUser.values,
+							'new organizer': newUser,
 							'event': event.values
 						}
 						res.status(200).send(message);

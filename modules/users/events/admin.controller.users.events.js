@@ -29,8 +29,6 @@ exports.getEventsOrganisedByUser = function(req, res, next) {
 exports.getEventsParticipatedBuUser = function(req, res, next) {
     const userKey = req.params.userKey
 
-    // MATCH (user:User{key:'${userKey}'})-[b:wishesToJoin{status:'accepted'}]->(demandEvent:Event) 
-
     const invitationQuery = `MATCH (user:User{key:'${userKey}'})-[a:invitedTo{status:'accepted'}]->(inviteEvent:Event)
                              RETURN inviteEvent`
     

@@ -5,7 +5,7 @@ import bodyParser from 'body-parser';				// several middleware to handle request
 import methodOverride from 'method-override';		// provide suport for DELTE and PUT http Verbs
 import morgan from 'morgan';						// simple logger middleware
 import session from 'express-session';				// identify and track current user + session.
-import router from './router';						// routing middleware
+import router from './routes';          			// routing middleware (default to index.js)
 import passport from 'passport';                    // authentication
 
 // INITIALISE AN EXPRESS APPLICATION
@@ -21,13 +21,14 @@ module.exports = () => {
     }
 
     /**
-     * REGISTER MIDDLEWARE
+     * REGISTER MIDDLEWARE HERE
      */
 
     // SESSION HANDLING:
     app.use(session({
-        saveUninitialized: true,
-        resave: true,
+        saveUninitialized: false,
+        resave: false,
+        cookie: {maxAge: 60000},
         secret: config.sessionSecret
     }))
 
@@ -38,16 +39,19 @@ module.exports = () => {
     }));
     app.use(bodyParser.json());
 
+    
     // ROUTES:
     app.use('/', router);
 
-
+    
     // METHOD OVERRIDE:
     app.use(methodOverride());
 
+    
     // REGISTER MIDDLEWARE FOR AUTHENTICATION USING PASSPORT
     app.use(passport.initialize())
     app.use(passport.session())
+
 
     // APPLICATION ERROR HANDLING: (this needs to be last)
     app.use(logErrors)

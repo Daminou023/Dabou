@@ -1,4 +1,5 @@
 import Utils from '../../../utils/utils'
+import User  from '../../model.user'
 
 // CONFIGURE NEO4J DRIVER
 var randomstring  = require("randomstring");
@@ -8,7 +9,6 @@ var neoDriver 	  = neo4j.driver("bolt://localhost:7687", neo4j.auth.basic("neo4j
 var neoSession 	  = neoDriver.session();
 
 const ReturnGame   = require('../../../games/model.games');
-const ReturnUser   = require('../../../users/model.users.out')
 const ReturnReview = require('../../../reviews/model.review')
 
 
@@ -123,8 +123,6 @@ exports.deleteGAme = function(req, res, next) {
                                  DELETE rel 
                                  RETURN user, game`
 
-    console.log(deleteUserGameQuery)
-
         neoSession
         .run(checkGamesExistsquery)
         .then(result => {
@@ -136,9 +134,8 @@ exports.deleteGAme = function(req, res, next) {
                 neoSession
                     .run(deleteUserGameQuery)
                     .then(results => {
-                        
-                        let msg = '';
-                        let user = results.records.map(record => new ReturnUser(record.get('user').properties).values);
+
+                        let user = results.records.map(record => User.create(record.get('user').properties).outputValues);
                         let deletedGames = results.records.map(record => new ReturnGame(record.get('game').properties).values);
 
                         let message = {
@@ -261,7 +258,7 @@ exports.deleteWhisedGAme = function(req, res, next) {
                     .then(results => {
                         
                         let msg = '';
-                        let user = results.records.map(record => new ReturnUser(record.get('user').properties).values);
+                        let user = results.records.map(record => User.create(record.get('user').properties).outputValues);
                         let deletedGames = results.records.map(record => new ReturnGame(record.get('game').properties).values);
 
                         let message = {

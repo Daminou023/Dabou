@@ -1,4 +1,5 @@
 import Utils from '../../../utils/utils'
+import User  from '../../model.user'
 
 // CONFIGURE NEO4J DRIVER
 var randomstring  = require("randomstring");
@@ -8,7 +9,6 @@ var neoDriver 	  = neo4j.driver("bolt://localhost:7687", neo4j.auth.basic("neo4j
 var neoSession 	  = neoDriver.session();
 
 const ReturnGame   = require('../../../games/model.games');
-const ReturnUser   = require('../../../users/model.users.out')
 
 
 // GET GAMES FROM A GIVEN PERSON
@@ -26,7 +26,7 @@ exports.listBorrowedGames = function(req, res, next) {
             let leases = result.records.map(record => ({
                 lease:  record.get('link').properties,
                 game:   games.filter(game => game.key === record.get('link').properties.gameKey)[0],
-                lender: new ReturnUser(record.get('lender').properties).values
+                lender: User.create(record.get('lender').properties).outputValues
             }))
 			res.json(leases);
 			closeConnection()

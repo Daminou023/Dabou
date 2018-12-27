@@ -31,21 +31,15 @@ exports.listUsers = function(req, res, next) {
 // GET INFORMATION ON A SINGLE USER
 exports.getUser = function(req, res, next) {
 	let userKey = req.params.userKey;
-	neoSession
-		.run("MATCH (user:User)WHERE user.key='" + userKey +  "' RETURN user")
-		.then(result => {
-			if (result.records.length == 0) {
-				handleNoResultsResponse(req, res)
-			} else {
-				let user = User.filterOutputValues(result.records[0].get('user').properties);
-				res.json(user);
-				closeConnection()
-			}
+	User.getByUserKey(userKey)
+		.then(user => {
+			if (user) res.json(user.outputValues)
+			else Utils.handleNoResultsResponse(req, res, "no user with this key was found")
 		})
-		.catch(function(err) {
+		.catch(err => {
 			return next(err);
 			closeConnection()
-		});
+		})
 }
 
 // GET USER BY USERNAME
@@ -103,8 +97,6 @@ exports.editUser = function(req, res, next) {
 	}
 	query += "RETURN user"
 
-	console.log(query)
-
 	neoSession
 		.run("MATCH (user:User)WHERE user.key='" + user.values.key +  "' RETURN user")
 		.then(result => {
@@ -114,12 +106,10 @@ exports.editUser = function(req, res, next) {
 				neoSession
 					.run(query)
 					.then(results => {
-						let editedUser = new ReturnUser(results.records[0].get('user').properties);
-						delete editedUser.password;
+						let editedUser = User.create(results.records[0].get('user').properties);
 						let message = {
-							'status': 200,
 							'message': 'user was edited!',
-							'user': editedUser.values
+							'user': editedUser.outputValues
 						}
 						res.status(200).send(message);
 						closeConnection()

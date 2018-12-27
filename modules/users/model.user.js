@@ -1,4 +1,5 @@
 import Utils from '../utils/utils'
+require('../../config/passport')
 
 // CONFIGURE NEO4J DRIVER
 const randomstring 	= require("randomstring");
@@ -36,8 +37,8 @@ var User = function () {
     ]
 
     // AUTHENTICATE USER
-    var authenticate = function(passWord) {
-        return (this.values.passWord === hashPassword(passWord))
+    var authenticate = function(password) {
+        return (this.values.passWord === hashPassword(password))
     }
 
     // Check that input values correspond to schema. Generate error if unknown or invalid input
@@ -113,6 +114,29 @@ var User = function () {
             });
         })
         return userPromise;
+    }
+
+    // GET USER BY KEY1
+    var getByKey = function(userKey) {
+        const userQuery = `MATCH (user:User{key:'${userKey}'}) return user`
+        const userPromise = new Promise((resolve, reject) => {
+            neoSession
+            .run(userQuery)
+            .then(result => {
+                const foundUser = this.create(result.records.map(record => record.get('user').properties)[0])
+                resolve(foundUser)
+            })
+            .catch(function(err) {
+                reject(err)
+            });
+        })
+        return userPromise;
+    }
+    
+    // EDIT USER
+    var editUser = function(userKey) {
+        const userQuery = `MATCH (user:User{key:'${userKey}'}) return user`
+
     }
     
     // Filter the info that goes out (password for example)

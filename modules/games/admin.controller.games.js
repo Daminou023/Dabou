@@ -1,4 +1,5 @@
 import Utils from '../utils/utils'
+import User  from '../users/model.user'
 
 // CONFIGURE NEO4J DRIVER
 var randomstring = require("randomstring");
@@ -9,7 +10,6 @@ var Game 		 = require('./model.games');
 var crypto 		 = require('crypto');
 var ReturnGame   = require('./model.games')
 var ReturnReview = require('../reviews/model.review')
-var ReturnUser   = require('../users/model.users.out')
 
 // GET LIST OF ALL GAMES
 exports.listGames = function(req, res, next) {
@@ -205,7 +205,7 @@ exports.getGameReviews = function(req, res, next) {
 			let reviews = result.records.map(record => {
 				let review = new ReturnReview(record.get('review').properties).values;
 				let game = new ReturnGame(record.get('game').properties).values;
-				let user = new ReturnUser(record.get('user').properties).values;
+				let user = User.create(record.get('user').properties).outputValues;
 				return { review, game, user }
 			})
 

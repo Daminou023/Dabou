@@ -1,5 +1,6 @@
 import { link } from "fs";
 import Utils from '../../utils/utils'
+import User  from '../../users/model.user'
 
 // CONFIGURE NEO4J DRIVER
 var randomstring  = require("randomstring");
@@ -9,7 +10,6 @@ var neoSession 	  = neoDriver.session();
 var Event 		  = require('../model.event');
 var EventLinks    = require('../model.eventLinks');
 const Demand      = require('./admin.events.demand.model')
-const ReturnUser  = require('../../users/model.users.out');
 const ReturnEvent = require('../model.event.out');
 
 
@@ -34,7 +34,7 @@ exports.getDemands = function(req, res, next) {
                     const response = {
                         demands : result.records.map(record => {
                             return {
-                                user: new ReturnUser(record.get('user').properties).values,
+                                user: User.create(record.get('user').properties).outputValues,
                                 demandStatus: record.get('link').properties.status
                             }
                         }),
@@ -99,7 +99,7 @@ exports.addDemands = function(req, res, next) {
                                 'event':         results.records.map(record => new ReturnEvent(record.get('event').properties).values)[0],
                                 'invited users': results.records.map(record => {
                                     return {
-                                        user: new ReturnUser(record.get('user').properties).values,
+                                        user: User.create(record.get('user').properties).outputValues,
                                         demandStatus: 'pending'
                                     }
                                 }) 
@@ -191,9 +191,9 @@ exports.editDemands = function(req, res, next) {
                             'status': 200,
                             'message': 'event demands were changed!',
                             'results' : {
-                                'accepted':results[0].records.map(record => new ReturnUser(record.get('user').properties).values),
-                                'rejected':results[1].records.map(record => new ReturnUser(record.get('user').properties).values),
-                                'pending':results[2].records.map(record => new ReturnUser(record.get('user').properties).values),
+                                'accepted':results[0].records.map(record => User.create(record.get('user').properties).outputValues),
+                                'rejected':results[1].records.map(record => User.create(record.get('user').properties).outputValues),
+                                'pending':results[2].records.map(record => User.create(record.get('user').properties).outputValues),
                             }
                         }
                         res.status(200).send(message);
@@ -259,7 +259,7 @@ exports.deleteDemands = function(req, res, next) {
                                 let message = {
                                     'message': 'event demands were deleted!',
                                     'event':           results.records.map(record => new ReturnEvent(record.get('event').properties).values)[0],
-                                    'deleted demands': results.records.map(record => new ReturnUser(record.get('user').properties).values),
+                                    'deleted demands': results.records.map(record => User.create(record.get('user').properties).outputValues),
                                 }
                                 res.status(200).send(message);
                                 closeConnection()
