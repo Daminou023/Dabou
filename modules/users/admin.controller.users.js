@@ -1,4 +1,4 @@
-import User  from './user.model'
+import User  from './model.user'
 import Utils from '../utils/utils'
 
 // CONFIGURE NEO4J DRIVER
@@ -37,8 +37,8 @@ exports.getUser = function(req, res, next) {
 			if (result.records.length == 0) {
 				handleNoResultsResponse(req, res)
 			} else {
-				let user = new User(result.records[0].get('user').properties);
-				res.json(user.filterOutputValues());
+				let user = User.filterOutputValues(result.records[0].get('user').properties);
+				res.json(user);
 				closeConnection()
 			}
 		})
@@ -48,16 +48,29 @@ exports.getUser = function(req, res, next) {
 		});
 }
 
+// GET USER BY USERNAME
+exports.getByUsername = function(req, res, next) {
+	let userName = req.params.userName;
+	User.getByUsername(userName)
+		.then(user => {
+			if (user) res.json(user.outputValues)
+			else Utils.handleNoResultsResponse(req, res, "no user with this userName was found")
+		})
+		.catch(err => {
+			return next(err);
+			closeConnection()
+		})
+}
+
 // CREATE A NEW USER
 exports.createUser = function(req, res, next) {
 
-	let newUser = new User(req.body)
-
+	let newUser = User.create(req.body)
 	if (newUser.error) {
 		res.status(400).send(newUser.error);
 		return
 	} else {
-		newUser.register( user => {
+		newUser.register( res, user => {
 			res.status(200).send({
 				message:'user was created',
 				newUser: user
@@ -68,49 +81,7 @@ exports.createUser = function(req, res, next) {
 		})
 	}
 }
-	/*
 
-	newUser.values.role = "user"
-	newUser.values.passWord = hashPassword(req.body.passWord);
-	
-
-	neoSession
-			.run("MATCH (user:User)WHERE user.userName='" + newUser.values.userName +  "' RETURN user")
-			.then(results => {
-    			if (results.records.length > 0) {
-    				let message = {
-							'status': 400,
-							'message': "sorry, userName is already taken!"
-						}
-					res.status(400).send(message);
-				}
-				else {
-
-					neoSession
-					.run(
-						`CREATE (user:User {user}) RETURN user`, {user: newUser.values})
-			        	.then(results => {
-							let createdUser = new ReturnUser(results.records[0].get('user').properties);
-			            	let message = {
-			            		'status': 200,
-			            		'message': 'user was added!',
-			            		'user': createdUser
-							}
-							res.status(200).send(message);
-							closeConnection()
-			          	})
-			          	.catch(function(err) {
-							return next(err);
-							closeConnection()
-						})
-			    }
-      		})
-      		.catch(function(err) {
-				return next(err);
-				closeConnection();
-			});
-}
-	*/
 
 // EDIT INFORMATION ON A SINGLE USER
 exports.editUser = function(req, res, next) {
