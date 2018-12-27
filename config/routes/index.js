@@ -25,7 +25,7 @@ router.get('/', (req, res) => {
 	res.send('Hello Dabou!')
   });
 
-router.use('/admin/', require('./api/admin'))
+router.use('/admin', require('./api/admin'))
 
 // DEFAULT 404 PAGE
 router.use((req, res) => {

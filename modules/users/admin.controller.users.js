@@ -11,14 +11,12 @@ const crypto 		= require('crypto');
 
 // GET LIST OF ALL USERS
 exports.listUsers = function(req, res, next) {
-	let listOfUsers = [];
 	neoSession
 		.run('MATCH (user:User) RETURN user')
 		.then(function(result){
-			result.records.forEach(function(record){
-				let user = new User(record.get('user').properties);
-				listOfUsers.push(user.filterOutputValues());
-			})
+			const listOfUsers = result.records.map( record => {
+				return User.create(record.get('user').properties).outputValues
+			});
 			res.json(listOfUsers);
 			closeConnection()
 		})
@@ -79,113 +77,44 @@ exports.createUser = function(req, res, next) {
 
 // EDIT INFORMATION ON A SINGLE USER
 exports.editUser = function(req, res, next) {
-	
-	let user = new User(req.body);
-	user.values.key = req.params.userKey;
-
-	if(user.error.unknownProperties) {
-		res.status(400).send(user.error);
-		return
-	}
-
-	let query = "MATCH (user:User)WHERE user.key='" + user.values.key + "'";
-	for (let property in user.values) {
-		if (property == "passWord") {
-			user.values[property] = hashPassword(user.values[property])
-		}
-		query += `SET user.${property} ="${user.values[property]}"`;
-	}
-	query += "RETURN user"
-
-	neoSession
-		.run("MATCH (user:User)WHERE user.key='" + user.values.key +  "' RETURN user")
-		.then(result => {
-			if (result.records.length == 0) {
-				handleNoResultsResponse(req, res)
-			} else {
-				neoSession
-					.run(query)
-					.then(results => {
-						let editedUser = User.create(results.records[0].get('user').properties);
-						let message = {
-							'message': 'user was edited!',
-							'user': editedUser.outputValues
-						}
-						res.status(200).send(message);
-						closeConnection()
-					})
-					.catch(function(err) {
-						return next(err);
-						closeConnection()
-					})
-			}
+	const userKey = req.params.userKey;
+	User.editUser(userKey, req.body)
+		.then(user => {
+			if (user) { 
+				if (user.error) {
+					res.status(400).send(user.error);
+					return		
+				} else {
+					res.status(200).send({
+						message: 'user was edited',
+						editedUser: user
+					}) 
+				}
+			} else Utils.handleNoResultsResponse(req, res, "no user was found for this key")
 		})
-		.catch(function(err) {
+		.catch(err => {
 			return next(err);
 			closeConnection()
-	});
-}
-
-exports.getUserActicity = function(req, res, next) {
-	
-	let userKey = req.params.userKey;
-	neoSession
-		.run("MATCH (user:User)WHERE user.key='" + userKey +  "' RETURN user")
-		.then(result => {
-			if (result.records.length == 0) {
-				handleNoResultsResponse(req, res)
-			} else {
-				let user = ReturnUser(result.records[0].get('user').properties);
-				res.json(user);
-				closeConnection()
-			}
 		})
-		.catch(function(err) {
-			return next(err);
-			closeConnection()
-		});
 }
 
-
-// DELETE A USER
-/*
-* !! when deleting a user, or any node, do not forget to 
-* delete all links to that node before you delete it!
-*/
+// DELETE A USER BY HIS ID
 exports.deleteUser = function(req, res, next) {
-	let userKey = req.params.userKey;
-	let query = 'MATCH (user:User{ key:"' + userKey + '"}) DETACH DELETE user';
-	
-	neoSession
-		.run(
-			query
-		)
-		.then(results => {
-			let message = {
-				'status': 200,
-				'message': 'user was deleted!'
-			}
-			res.status(200).send(message);
-			closeConnection();
+	const userKey = req.params.userKey;
+	User.deleteUser(userKey)
+		.then(user => {
+			if (user) {
+				res.status(200).send({
+					message: 'user was deleted',
+					deletedUser: user
+				})
+			} else Utils.handleNoResultsResponse(req, res, 'no user was found for this key')
 		})
-		.catch(function(err) {
+		.catch(err => {
 			return next(err);
-			closeConnection();
+			closeConnection()
 		})
 }
-
-
-// HANDLE 404 RESULT ERRORS
-function handleNoResultsResponse(req, res) {
-	let message = {
-		'status': 404,
-		'message': "sorry, nothing found!"
-	}
-	res.send(message, 404);
-}
-
-
-
 
 // CLOSE CONNECTION AND DRIVER TO DB
 function closeConnection() {

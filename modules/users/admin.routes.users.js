@@ -63,11 +63,7 @@ router.route('/:userKey/friends')
 
 router.route('/:userKey/friendsOfFriends')
 	.get(AdminFriendShipController.getFriendsOfFriends)
-
-
-router.route('/:userKey/activity')
-	.get(AdminUserController.getUserActicity);
-
+	
 
 router.route('/:userKey/organisedEvents')
 	.get(AdminUserEventsController.getEventsOrganisedByUser)

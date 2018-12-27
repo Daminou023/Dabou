@@ -42,15 +42,15 @@ var User = function () {
     }
 
     // Check that input values correspond to schema. Generate error if unknown or invalid input
-    var validateInput = (values) => {
+    var validateInput = function() {
 
         // Check unknown values
-        let unknownProperties = Object.keys(values).filter((key) => {return !(key in userSchema)})
+        let unknownProperties = Object.keys(this.values).filter((key) => {return !(key in userSchema)})
         
         // Check for missing values
         let missingProperties = Object.keys(userSchema)
                                       .filter((key) => userSchema[key].required)
-                                      .filter((key) => !values[key])
+                                      .filter((key) => !this.values[key])                       
 
         // Generate error
         let error = {};
@@ -64,7 +64,8 @@ var User = function () {
             error = undefined;
         }
 
-        return error
+        this.error = error
+        return this
     }
 
     // REGISTER NEW USER
@@ -91,7 +92,7 @@ var User = function () {
                     .run(`CREATE (user:User {user}) RETURN user`, {user: this.values})
                     .then(results => {
                             let createdUser = results.records[0].get('user').properties;
-                            cb(create(createdUser))
+                            cb(create(createdUser).outputValues)
                         })
                     .catch(err => ecb(err))
                 }
@@ -106,7 +107,7 @@ var User = function () {
             neoSession
             .run(userQuery)
             .then(result => {
-                const foundUser = this.create(result.records.map(record => record.get('user').properties)[0])
+                const foundUser = create(result.records.map(record => record.get('user').properties)[0])
                 resolve(foundUser)
             })
             .catch(function(err) {
@@ -117,13 +118,13 @@ var User = function () {
     }
 
     // GET USER BY KEY1
-    var getByKey = function(userKey) {
+    var getByUserKey = function(userKey) {
         const userQuery = `MATCH (user:User{key:'${userKey}'}) return user`
         const userPromise = new Promise((resolve, reject) => {
             neoSession
             .run(userQuery)
             .then(result => {
-                const foundUser = this.create(result.records.map(record => record.get('user').properties)[0])
+                const foundUser = create(result.records.map(record => record.get('user').properties)[0])
                 resolve(foundUser)
             })
             .catch(function(err) {
@@ -134,11 +135,59 @@ var User = function () {
     }
     
     // EDIT USER
-    var editUser = function(userKey) {
-        const userQuery = `MATCH (user:User{key:'${userKey}'}) return user`
+    var editUser = function(userKey, newValues) {
+        const userPromise = new Promise((resolve, reject) => {
+            getByUserKey(userKey)
+                .then(user => {
+                    if(!user) return resolve(undefined)
+                    for (let property in newValues) {
+                        user.values[`${property}`] = newValues[`${property}`]
+                    } 
 
+                    // Check if content is ok before updating
+                    user.validateInput()
+                    if (user.error) return resolve(user)
+
+                    getByUsername(user.values.userName)
+                        .then(existingUser => {
+                            if (existingUser) {
+                                existingUser.error = {message: "username already exists"}
+                                resolve(existingUser)
+                            } else {
+                                const updateQuery = `MATCH (user:User{key:'${userKey}'}) SET user = $values return user`
+                                neoSession
+                                    .run(updateQuery, {"values": user.values})
+                                    .then(results => {
+                                        let editedUser = User.create(results.records[0].get('user').properties);
+                                        resolve(editedUser.outputValues)
+                                    })
+                                    .catch(err => reject(err))
+                            }
+                        })
+                })
+                .catch(err => reject(err))
+        })
+        return userPromise;
     }
     
+    // DELETE USER
+    var deleteUser = function(userKey) {
+        const userPromise = new Promise((resolve, reject) => {
+            getByUserKey(userKey)
+                .then(user => {
+                    if(!user) return resolve(undefined)
+                    const deleteUserQuery = `MATCH (user:User{key:'${userKey}'}) DETACH DELETE user RETURN user`
+                    neoSession.run(deleteUserQuery)
+                              .then(results => {
+                                    resolve(user.outputValues)
+                              })
+                              .catch(err => reject(err))
+                })
+                .catch(err => reject(err))
+        })
+        return userPromise
+    }
+
     // Filter the info that goes out (password for example)
     var filterOutputValues = function() {
         let outputObject = {}
@@ -188,22 +237,21 @@ var User = function () {
 
     // CREATE AN INSTANCE CONTAINING DATA
     var UserInstance = function(values) {
-        this.values = values;
-        this.error  = validateInput(values);
+        this.values        = values;
+        this.outputValues  = filterOutputValues.call(this),
+        this.register      = register.bind(this),
+        this.authenticate  = authenticate.bind(this),
+        this.validateInput = validateInput.bind(this)
 
-        return ({
-            values       : this.values,
-            error        : this.error,
-            outputValues : filterOutputValues.call(this),
-            register     : register.bind(this),
-            authenticate : authenticate.bind(this)
-        })   
+        validateInput.call(this);
     }
 
     // RETURN OF FACTORY
 	return ({
         getByUsername:      getByUsername,
-        validateInput:      validateInput,
+        getByUserKey:       getByUserKey,
+        editUser:           editUser,
+        deleteUser:         deleteUser,
         create :            create
     })
 

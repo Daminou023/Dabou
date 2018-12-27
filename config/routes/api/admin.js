@@ -16,14 +16,14 @@ const adminDistributorsRoute  = require('../../../modules/distributor/admin.rout
 
 
 // USE ROUTING FROM OTHER COMPONENTS
-router.use('/admin/users',  	  adminUsersRoute);
-router.use('/admin/games',  	  adminGamesRoute);
-router.use('/admin/events', 	  adminEventsRoute);
-router.use('/admin/locations', 	  adminLocationsRoute);
-router.use('/admin/reviews', 	  adminReviewsRoute);
-router.use('/admin/illustrators', adminIllustratorsRoute);
-router.use('/admin/authors', 	  adminAuthorsRoute);
-router.use('/admin/editors', 	  adminEditorsRoute);
-router.use('/admin/distributors', adminDistributorsRoute);
+router.use('/users',  	    adminUsersRoute);
+router.use('/games',  	    adminGamesRoute);
+router.use('/events', 	    adminEventsRoute);
+router.use('/locations', 	adminLocationsRoute);
+router.use('/reviews', 	    adminReviewsRoute);
+router.use('/illustrators', adminIllustratorsRoute);
+router.use('/authors', 	    adminAuthorsRoute);
+router.use('/editors', 	    adminEditorsRoute);
+router.use('/distributors', adminDistributorsRoute);
 
 module.exports = router;
