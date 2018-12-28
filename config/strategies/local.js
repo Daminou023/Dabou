@@ -2,14 +2,16 @@ var passport = require('passport'),
     LocalStrategy = require('passport-local').Strategy
 
 module.exports = function() {
-    passport.use(new LocalStrategy((username, password, done) => {
-        // Find the user by his username
-
-        // If no user
-
-        // if the password is incorrect
-
-        // return done(null, user)
+    // register the strategy using passport.use()
+    passport.use(new localStrategy( (username, password, done) => {
+        User.getByUsername(username)
+            .then(user => {
+                if (!user) return done(null, false, {message: 'unknown user'})
+                if (!user.authenticate(password)) return done(null, false,  {message: 'Invalid Password'})
+                return done(null, user);
+            })
+            .catch(err => done(err))
         })
     )
 }
+

@@ -13,6 +13,7 @@ router.use((req, res, next) => {
 	else {
 		console.log("new visit");
 	}
+	
 	req.session.lastVisit = new Date();
 	
 	// middleware goes here

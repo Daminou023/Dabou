@@ -1,5 +1,6 @@
-import User  from './model.user'
-import Utils from '../utils/utils'
+import User  	from './model.user'
+import Utils 	from '../utils/utils'
+import passport from 'passport'
 
 // CONFIGURE NEO4J DRIVER
 const randomstring 	= require("randomstring");
@@ -62,15 +63,17 @@ exports.createUser = function(req, res, next) {
 		res.status(400).send(newUser.error);
 		return
 	} else {
-		newUser.register( res, user => {
-			res.status(200).send({
-				message:'user was created',
-				newUser: user
+		newUser.register()
+			.then(user => {
+				res.status(200).send({
+					message:'user was created',
+					newUser: user
+				})
 			})
-		}, err => {
-			return next(err);
-			closeConnection()
-		})
+			.catch(err =>{
+				return next(err)
+				closeConnection()
+			}) 
 	}
 }
 
@@ -80,17 +83,10 @@ exports.editUser = function(req, res, next) {
 	const userKey = req.params.userKey;
 	User.editUser(userKey, req.body)
 		.then(user => {
-			if (user) { 
-				if (user.error) {
-					res.status(400).send(user.error);
-					return		
-				} else {
-					res.status(200).send({
-						message: 'user was edited',
-						editedUser: user
-					}) 
-				}
-			} else Utils.handleNoResultsResponse(req, res, "no user was found for this key")
+			res.status(200).send({
+				message: 'user was edited',
+				editedUser: user
+			}) 
 		})
 		.catch(err => {
 			return next(err);
@@ -114,6 +110,44 @@ exports.deleteUser = function(req, res, next) {
 			return next(err);
 			closeConnection()
 		})
+}
+
+// SIGNUP A NEW USER
+exports.signup = function(req, res, next) {
+	if(!req.user) {
+		let newUser = User.create(req.body)
+		if (newUser.error) {
+			res.status(400).send(newUser.error);
+			return
+		} else {
+			newUser.register( res, user => {
+				// req.login() is exposed by the passport module. 
+				// Used to establish a successful login session
+				// After login operation is completed, a user object is signed to req.user Object
+				req.login(user, (err) => {
+					if (err) {
+						return next(err)
+					}
+				})
+				res.status(200).send({
+					message:'user was created',
+					newUser: user
+				})
+			}, err => {
+				return next(err);
+				closeConnection()
+			})
+		}
+	} else {
+		return res.redirect('/')
+	}
+}
+
+// SIGN OUT THE USER
+exports.signout = function(req, res) {
+	// req.logout() is provided by the Passport module and invalidates the authenticated session
+	req.logout();
+	res.redirect('/')
 }
 
 // CLOSE CONNECTION AND DRIVER TO DB

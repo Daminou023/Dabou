@@ -1,7 +1,6 @@
-const EH = require('./errorHandler')
-const RX = require('./regex')
+import errorHandler from './errorHandler'
 
-const errorHandler = new EH();
+const RX = require('./regex')
 const regexFactory = new RX();
 
 var Utils = function() {
