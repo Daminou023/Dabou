@@ -41,13 +41,13 @@ exports.getUser = function(req, res, next) {
 		})
 }
 
-// GET USER BY USERNAME
+// GET USER BY username
 exports.getByUsername = function(req, res, next) {
-	let userName = req.params.userName;
-	User.getByUsername(userName)
+	let username = req.params.username;
+	User.getByUsername(username)
 		.then(user => {
 			if (user) res.json(user.outputValues)
-			else Utils.handleNoResultsResponse(req, res, "no user with this userName was found")
+			else Utils.handleNoResultsResponse(req, res, "no user with this username was found")
 		})
 		.catch(err => {
 			return next(err);

@@ -22,7 +22,7 @@ router.route('/:userKey')
 	.put(AdminUserController.editUser)
 	.delete(AdminUserController.deleteUser);
 
-router.route('/username/:userName')
+router.route('/username/:username')
 	.get(AdminUserController.getByUsername)	
 
 router.route('/:userKey/games')

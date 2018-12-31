@@ -2,7 +2,8 @@
 import express        from 'express';			// Main express application
 import compress       from 'compression';		// Allows you to compress your http response
 import bodyParser     from 'body-parser';		// Several middleware to handle request data
-import methodOverride from 'method-override';	// Provide suport for DELTE and PUT http Verbs
+import cookieParser   from 'cookie-parser';     // Read cookies (needed for auth)
+import methodOverride from 'method-override';	// Provide suport for DELETE and PUT http Verbs
 import morgan         from 'morgan';			// Simple logger middleware
 import session        from 'express-session';	// Identify and track current user + session.
 import router         from './routes';          // Routing middleware (default to index.js)
@@ -12,7 +13,7 @@ import ErrorHandler   from '../modules/utils/errorHandler';
 
 // INITIALISE AN EXPRESS APPLICATION
 module.exports = () => {
-    const app = express();
+    const app    = express();
     const config = require('./config');
 
     // USE MORGAN LOGER IF IN DEV MODE:
@@ -25,6 +26,9 @@ module.exports = () => {
     /**
      * REGISTER MIDDLEWARE HERE
      */
+
+    // COOKIE-PARSER:
+    app.use(cookieParser())
 
     // BODY-PARSER:
     app.use(bodyParser.urlencoded({
@@ -42,18 +46,17 @@ module.exports = () => {
         secret: config.sessionSecret
     }))
 
-    // FLASH MIDDLEWARE
-    app.use(flash())
-
     // REGISTER MIDDLEWARE FOR AUTHENTICATION USING PASSPORT
     app.use(passport.initialize())
     app.use(passport.session())
+
+    // FLASH MIDDLEWARE
+    app.use(flash())
 
     // ROUTES:
     app.use('/', router);    
 
     // APPLICATION ERROR HANDLING: (this needs to be last)
-
     app.use(logErrors)
     app.use(clientErrorHandler)
     app.use(ErrorHandler.returnError)

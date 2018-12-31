@@ -1,6 +1,5 @@
 import Utils  from '../utils/utils'
 import CError from '../utils/cError'
-require('../../config/passport')
 
 // CONFIGURE NEO4J DRIVER
 const randomstring 	= require("randomstring");
@@ -17,10 +16,10 @@ var User = function () {
         key:        { type: 'String'},
         role:       { type: 'String'},
         name:       { type: 'String', 	required:true },
-        sirName:    { type: 'String', 	required:true },
-        mail:       { type: 'email', 	required:true },
-        userName:   { type: 'String', 	required:true },
-        passWord:   { type: 'String', 	required:true },
+        sirname:    { type: 'String', 	required:true },
+        email:      { type: 'email', 	required:true },
+        username:   { type: 'String', 	required:true },
+        password:   { type: 'String', 	required:true },
         adress:     { type: 'String',   required:true },
         birthday:   { type: 'Date',	    required:true },
         provider:   { type: 'String'},
@@ -31,9 +30,9 @@ var User = function () {
     const outputSchema = [
         'key',
         'name',
-        'sirName',
-        'mail',
-        'userName',
+        'sirname',
+        'email',
+        'username',
         'role',
         'birthday',
         'adress'
@@ -41,7 +40,7 @@ var User = function () {
 
     // AUTHENTICATE USER
     var authenticate = function(password) {
-        return (this.values.passWord === hashPassword(password))
+        return (this.values.password === hashPassword(password))
     }
 
     // Check that input values correspond to schema. Generate error if unknown or invalid input
@@ -72,42 +71,44 @@ var User = function () {
     // REGISTER NEW USER
     var register = function () {
 
-        this.values.passWord = hashPassword(this.values.passWord);
-        this.values.key      = this.values.userName + randomstring.generate({ length: 10, charset: 'hex'});
+        this.values.password = hashPassword(this.values.password);
+        this.values.key      = this.values.username + randomstring.generate({ length: 10, charset: 'hex'});
         this.values.key      = Utils.removeWhiteSpace(this.values.key);
         this.values.key      = Utils.escapeSpecial(this.values.key);
         this.values.role     = "user";
         this.values.provider = "local";
-        
-        const checkUserExistsQuery = `MATCH (user:User{userName:'${this.values.userName}'}) RETURN user`
 
         const registerUserPromise = new Promise((resolve, reject) => {
-            neoSession
-            .run(checkUserExistsQuery)
-            .then(results => {
-                if (results.records.length > 0) {
-                    let error  = new CError("test")
-                    error.code = 400 
-                    reject(error)
-                }
-                else {
-                    neoSession
-                    .run(`CREATE (user:User {user}) RETURN user`, {user: this.values})
-                    .then(results => {
-                            let createdUser = create(results.records[0].get('user').properties);
-                            resolve(createdUser)
-                        })
-                        .catch(err => reject(err))
-                }
+            getByUsername(this.values.username)
+                .then(existingUser => {
+                    if (existingUser) reject(new CError("username is already taken", 400))
+                    else {
+                        getByUserMail(this.values.email)
+                            .then(existingUser => {
+                                if (existingUser) reject(new CError("Email is already taken", 400))
+                                else {
+                                    neoSession
+                                        .run(`CREATE (user:User {user}) RETURN user`, {user: this.values})
+                                        .then(results => {
+                                                let createdUser = create(results.records[0].get('user').properties);
+                                                resolve(createdUser)
+                                            })
+                                        .catch(err => reject(err))
+                                }
+                            })
+                            .catch(err => reject(err))
+                    }
                 })
-                .catch(err => reject(err));
+                .catch(err => reject(err))
+                .catch(err => reject(err))
         })
         return registerUserPromise;
     }
 
-    // FIND USER BY USERNAME
-    var getByUsername = function(userName) {
-        const userQuery = `MATCH (user:User{userName:'${userName}'}) return user`
+    // FIND USER BY username
+    var getByUsername = function(username) {
+        console.log('get by username')
+        const userQuery = `MATCH (user:User{username:'${username}'}) return user`
         const userPromise = new Promise((resolve, reject) => {
             neoSession
             .run(userQuery)
@@ -120,9 +121,24 @@ var User = function () {
         return userPromise;
     }
 
-    // GET USER BY KEY1
+    // GET USER BY KEY
     var getByUserKey = function(userKey) {
         const userQuery = `MATCH (user:User{key:'${userKey}'}) return user`
+        const userPromise = new Promise((resolve, reject) => {
+            neoSession
+            .run(userQuery)
+            .then(result => {
+                const foundUser = create(result.records.map(record => record.get('user').properties)[0])
+                resolve(foundUser)
+            })
+            .catch(err => reject(err));
+        })
+        return userPromise;
+    }
+
+    // GET USER BY EMAIL
+    var getByUserMail = function(email) {
+        const userQuery = `MATCH (user:User{email:'${email}'}) return user`
         const userPromise = new Promise((resolve, reject) => {
             neoSession
             .run(userQuery)
@@ -144,7 +160,7 @@ var User = function () {
                     if(!user) return reject(new CError("no user with this key was found", 404))
                     
                     for (let property in newValues) {
-                        if (property == 'passWord') newValues.passWord = hashPassword(newValues.passWord)
+                        if (property == 'password') newValues.password = hashPassword(newValues.password)
                         user.values[`${property}`] = newValues[`${property}`]
                     } 
 
@@ -152,7 +168,7 @@ var User = function () {
                     user.validateInput()
                     if (user.error) return reject(user.error)
 
-                    getByUsername(newValues.userName)
+                    getByUsername(newValues.username)
                         .then(existingUser => {
                             if (existingUser) {
                                 reject(new CError("username already exists!", 400))
@@ -178,7 +194,9 @@ var User = function () {
         const userPromise = new Promise((resolve, reject) => {
             getByUserKey(userKey)
                 .then(user => {
-                    if(!user) return resolve(undefined)
+                    
+                    if(!user) return reject(new CError("no user with this key was found", 404))
+                    
                     const deleteUserQuery = `MATCH (user:User{key:'${userKey}'}) DETACH DELETE user RETURN user`
                     neoSession.run(deleteUserQuery)
                               .then(results => {
@@ -198,7 +216,7 @@ var User = function () {
         return outputObject
     }
 
-    // CRYPTOGRAPHY: HASH PASSWORD USING THE USERNAME AND PASSWORD
+    // CRYPTOGRAPHY: HASH password USING THE username AND password
     var hashPassword = function(password) {
         if(password){
             var s = 'milcampsSalt:' + password;
@@ -213,7 +231,7 @@ var User = function () {
         expirationDate.setDate(today.getDate() + 60);
 
         return jwt.sign({
-            userName: this.values.userName,
+            username: this.values.username,
             id: this.values.key,
             exp: parseInt(expirationDate.getTime() / 1000, 10),
         }, 'secret');
@@ -222,13 +240,13 @@ var User = function () {
     // TO AUTH JSON
     var toAuthJSON = () => {
         return {
-          userName: this.values.userName,
+          username: this.values.username,
           id: this.values.key,
           token: this.generateJWT(),
         };
     };
 
-    // VALIDATE PASSWORD (TODO: USE REGEX)
+    // VALIDATE password (TODO: USE REGEX)
     var validatePassword = (password) => {
         return (password && password.length > 5)
     }

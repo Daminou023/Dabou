@@ -1,36 +1,33 @@
 import express, { Router } from 'express';
+import passport 		   from 'passport';
+
+const adminAPI = require('./api/admin')
+const authAPI  = require('./auth')
 
 // INITIALISE PRIMARY ROUTER
 const router = Router();
 
-
 // MIDDLEWARE GOES HERE: logging, authentication, etc..
 router.use((req, res, next) => {
-
-	if (req.session.lastVisit) {
-		console.log("last visit:", req.session.lastVisit);
-	}
-	else {
-		console.log("new visit");
-	}
-	
+	if (req.session.lastVisit) console.log("last visit:", req.session.lastVisit);
+	else console.log("new visit");
 	req.session.lastVisit = new Date();
-	
-	// middleware goes here
-	console.log('middleware');
 	next();
 });
 
 // MAIN PAGE ROUTING
-router.get('/', (req, res) => {
-	res.send('Hello Dabou!')
-  });
-
-router.use('/admin', require('./api/admin'))
+router.use('/', authAPI)
+router.use('/admin', isLoggedIn, adminAPI)
 
 // DEFAULT 404 PAGE
 router.use((req, res) => {
-	res.send('404, page not found!', 404);
+	res.status(404).send('404, page not found!');
 })
+
+// CONTINUE TO ROUTE IF USER IS LOGGED IN, AUTH ERROR
+function isLoggedIn(req, res, next) {
+	if(req.isAuthenticated()) return next()
+	return res.status(401).send({ success : false, message : 'authentication failed' });
+}
 
 export default router;

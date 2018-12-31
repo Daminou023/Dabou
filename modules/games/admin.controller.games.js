@@ -227,8 +227,6 @@ exports.getGameReviews = function(req, res, next) {
 exports.getGameExtensions = function(req, res, next) {
 	let gameKey = req.params.gameKey
 
-	console.log(gameKey)
-
 	const extensionsQuery = `MATCH (extension:Game)-[:Extends]->(:Game{key:'${gameKey}'}) 
 							 MATCH (game:Game{key:'${gameKey}'}) 
 							 RETURN game, extension`;
