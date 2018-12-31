@@ -4,11 +4,7 @@ var randomstring  = require("randomstring");
 const neo4j 	  = require('neo4j-driver').v1;
 var neoDriver 	  = neo4j.driver("bolt://localhost:7687", neo4j.auth.basic("neo4j", "123456789"));
 var neoSession 	  = neoDriver.session();
-
-const Utils = require('../utils/utils');
-const utils = new Utils();
-
-const Author = require('./model.author');
+const Author 	  = require('./model.author');
 
 
 // GET LIST OF ALL GAMES

@@ -3,7 +3,7 @@ var Author = function (properties) {
     let authorProperties = {
         key:                    { value: properties["key"] },
         name:                   { value: properties["name"] , required:true },
-        sirName:                { value: properties["sirName"] , required:true },
+        sirname:                { value: properties["sirname"] , required:true },
         description:            { value: properties["description"] }
     }; 
 

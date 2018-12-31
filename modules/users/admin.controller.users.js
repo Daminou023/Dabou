@@ -1,25 +1,23 @@
+import User  	from './model.user'
+import Utils 	from '../utils/utils'
+import passport from 'passport'
 
 // CONFIGURE NEO4J DRIVER
-var randomstring = require("randomstring");
-const neo4j 	 = require('neo4j-driver').v1;
-var neoDriver 	 = neo4j.driver("bolt://localhost:7687", neo4j.auth.basic("neo4j", "123456789"));
-var neoSession 	 = neoDriver.session();
-var User 		 = require('./model.users');
-var ReturnUser   = require('./model.users.out');
-var crypto 		 = require('crypto');
+const randomstring 	= require("randomstring");
+const neo4j 	 	= require('neo4j-driver').v1;
+const neoDriver 	= neo4j.driver("bolt://localhost:7687", neo4j.auth.basic("neo4j", "123456789"));
+const neoSession 	= neoDriver.session();
+const crypto 		= require('crypto');
 
 
 // GET LIST OF ALL USERS
 exports.listUsers = function(req, res, next) {
-	let listOfUsers = [];
 	neoSession
 		.run('MATCH (user:User) RETURN user')
 		.then(function(result){
-			result.records.forEach(function(record){
-				let user = new ReturnUser(record.get('user').properties);
-				delete user.values.passWord;
-				listOfUsers.push(user.values);
-			})
+			const listOfUsers = result.records.map( record => {
+				return User.create(record.get('user').properties).outputValues
+			});
 			res.json(listOfUsers);
 			closeConnection()
 		})
@@ -32,197 +30,125 @@ exports.listUsers = function(req, res, next) {
 // GET INFORMATION ON A SINGLE USER
 exports.getUser = function(req, res, next) {
 	let userKey = req.params.userKey;
-	neoSession
-		.run("MATCH (user:User)WHERE user.key='" + userKey +  "' RETURN user")
-		.then(result => {
-			if (result.records.length == 0) {
-				handleNoResultsResponse(req, res)
-			} else {
-				let user = ReturnUser(result.records[0].get('user').properties);
-				res.json(user);
-				closeConnection()
-			}
+	User.getByUserKey(userKey)
+		.then(user => {
+			if (user) res.json(user.outputValues)
+			else Utils.handleNoResultsResponse(req, res, "no user with this key was found")
 		})
-		.catch(function(err) {
+		.catch(err => {
 			return next(err);
 			closeConnection()
-		});
+		})
+}
+
+// GET USER BY username
+exports.getByUsername = function(req, res, next) {
+	let username = req.params.username;
+	User.getByUsername(username)
+		.then(user => {
+			if (user) res.json(user.outputValues)
+			else Utils.handleNoResultsResponse(req, res, "no user with this username was found")
+		})
+		.catch(err => {
+			return next(err);
+			closeConnection()
+		})
 }
 
 // CREATE A NEW USER
 exports.createUser = function(req, res, next) {
 
-	let newUser = new User(req.body)
-	
+	let newUser = User.create(req.body)
 	if (newUser.error) {
 		res.status(400).send(newUser.error);
 		return
+	} else {
+		newUser.register()
+			.then(user => {
+				res.status(200).send({
+					message:'user was created',
+					newUser: user
+				})
+			})
+			.catch(err =>{
+				return next(err)
+				closeConnection()
+			}) 
 	}
-	
-	newUser.values.role = "user"
-	newUser.values.passWord = hashPassword(req.body.passWord);
-	newUser.values.key = req.body.userName + randomstring.generate({ length: 10, charset: 'hex'})
-	newUser.values.key = newUser.values.key.replace(/\s+/g, '')
-	newUser.values.key = newUser.values.key.replace(/[^\w\s]/gi, '')
-
-	neoSession
-			.run("MATCH (user:User)WHERE user.userName='" + newUser.values.userName +  "' RETURN user")
-			.then(results => {
-    			if (results.records.length > 0) {
-    				let message = {
-							'status': 400,
-							'message': "sorry, userName is already taken!"
-						}
-					res.status(400).send(message);
-				}
-				else {
-
-					neoSession
-					.run(
-						`CREATE (user:User {user}) RETURN user`, {user: newUser.values})
-			        	.then(results => {
-							let createdUser = new ReturnUser(results.records[0].get('user').properties);
-			            	let message = {
-			            		'status': 200,
-			            		'message': 'user was added!',
-			            		'user': createdUser
-							}
-							res.status(200).send(message);
-							closeConnection()
-			          	})
-			          	.catch(function(err) {
-							return next(err);
-							closeConnection()
-						})
-			    }
-      		})
-      		.catch(function(err) {
-				return next(err);
-				closeConnection();
-			});
 }
 
 
 // EDIT INFORMATION ON A SINGLE USER
 exports.editUser = function(req, res, next) {
-	
-	let user = new User(req.body);
-	user.values.key = req.params.userKey;
-
-	if(user.error.unknownProperties) {
-		res.status(400).send(user.error);
-		return
-	}
-
-	let query = "MATCH (user:User)WHERE user.key='" + user.values.key + "'";
-	for (let property in user.values) {
-		if (property == "passWord") {
-			user.values[property] = hashPassword(user.values[property])
-		}
-		query += `SET user.${property} ="${user.values[property]}"`;
-	}
-	query += "RETURN user"
-
-	console.log(query)
-
-	neoSession
-		.run("MATCH (user:User)WHERE user.key='" + user.values.key +  "' RETURN user")
-		.then(result => {
-			if (result.records.length == 0) {
-				handleNoResultsResponse(req, res)
-			} else {
-				neoSession
-					.run(query)
-					.then(results => {
-						let editedUser = new ReturnUser(results.records[0].get('user').properties);
-						delete editedUser.password;
-						let message = {
-							'status': 200,
-							'message': 'user was edited!',
-							'user': editedUser.values
-						}
-						res.status(200).send(message);
-						closeConnection()
-					})
-					.catch(function(err) {
-						return next(err);
-						closeConnection()
-					})
-			}
+	const userKey = req.params.userKey;
+	User.editUser(userKey, req.body)
+		.then(user => {
+			res.status(200).send({
+				message: 'user was edited',
+				editedUser: user
+			}) 
 		})
-		.catch(function(err) {
+		.catch(err => {
 			return next(err);
 			closeConnection()
-	});
-}
-
-exports.getUserActicity = function(req, res, next) {
-	
-	let userKey = req.params.userKey;
-	neoSession
-		.run("MATCH (user:User)WHERE user.key='" + userKey +  "' RETURN user")
-		.then(result => {
-			if (result.records.length == 0) {
-				handleNoResultsResponse(req, res)
-			} else {
-				let user = ReturnUser(result.records[0].get('user').properties);
-				res.json(user);
-				closeConnection()
-			}
 		})
-		.catch(function(err) {
-			return next(err);
-			closeConnection()
-		});
 }
 
-
-// DELETE A USER
-/*
-* !! when deleting a user, or any node, do not forget to 
-* delete all links to that node before you delete it!
-*/
+// DELETE A USER BY HIS ID
 exports.deleteUser = function(req, res, next) {
-	let userKey = req.params.userKey;
-	let query = 'MATCH (user:User{ key:"' + userKey + '"}) DETACH DELETE user';
-	
-	neoSession
-		.run(
-			query
-		)
-		.then(results => {
-			let message = {
-				'status': 200,
-				'message': 'user was deleted!'
-			}
-			res.status(200).send(message);
-			closeConnection();
+	const userKey = req.params.userKey;
+	User.deleteUser(userKey)
+		.then(user => {
+			if (user) {
+				res.status(200).send({
+					message: 'user was deleted',
+					deletedUser: user
+				})
+			} else Utils.handleNoResultsResponse(req, res, 'no user was found for this key')
 		})
-		.catch(function(err) {
+		.catch(err => {
 			return next(err);
-			closeConnection();
+			closeConnection()
 		})
 }
 
-
-// HANDLE 404 RESULT ERRORS
-function handleNoResultsResponse(req, res) {
-	let message = {
-		'status': 404,
-		'message': "sorry, nothing found!"
+// SIGNUP A NEW USER
+exports.signup = function(req, res, next) {
+	if(!req.user) {
+		let newUser = User.create(req.body)
+		if (newUser.error) {
+			res.status(400).send(newUser.error);
+			return
+		} else {
+			newUser.register( res, user => {
+				// req.login() is exposed by the passport module. 
+				// Used to establish a successful login session
+				// After login operation is completed, a user object is signed to req.user Object
+				req.login(user, (err) => {
+					if (err) {
+						return next(err)
+					}
+				})
+				res.status(200).send({
+					message:'user was created',
+					newUser: user
+				})
+			}, err => {
+				return next(err);
+				closeConnection()
+			})
+		}
+	} else {
+		return res.redirect('/')
 	}
-	res.send(message, 404);
 }
 
-// CRYPTOGRAPHY: HASH PASSWORD USING THE USERNAME AND PASSWORD
-function hashPassword(password) {
-	if(password){
-		var s = 'milcampsSalt:' + password;
-		return crypto.createHash('sha256').update(s).digest('hex');
-	}
-	return undefined;
+// SIGN OUT THE USER
+exports.signout = function(req, res) {
+	// req.logout() is provided by the Passport module and invalidates the authenticated session
+	req.logout();
+	res.redirect('/')
 }
-
 
 // CLOSE CONNECTION AND DRIVER TO DB
 function closeConnection() {

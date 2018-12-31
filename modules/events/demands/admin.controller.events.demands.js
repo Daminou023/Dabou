@@ -1,4 +1,6 @@
 import { link } from "fs";
+import Utils from '../../utils/utils'
+import User  from '../../users/model.user'
 
 // CONFIGURE NEO4J DRIVER
 var randomstring  = require("randomstring");
@@ -8,11 +10,7 @@ var neoSession 	  = neoDriver.session();
 var Event 		  = require('../model.event');
 var EventLinks    = require('../model.eventLinks');
 const Demand      = require('./admin.events.demand.model')
-const ReturnUser  = require('../../users/model.users.out');
 const ReturnEvent = require('../model.event.out');
-const Utils 	  = require('../../utils/utils');
-
-const utils = new Utils();
 
 
 exports.getDemands = function(req, res, next) {
@@ -27,7 +25,7 @@ exports.getDemands = function(req, res, next) {
         .run(checkEventExistsQuery)
         .then(result => {
             if (result.records.length == 0) {
-                utils.handleNoResultsResponse(req, res, 'Sorry, no event with this key was found')
+                Utils.handleNoResultsResponse(req, res, 'Sorry, no event with this key was found')
             } else { 
                 const event = new ReturnEvent(result.records[0].get('event').properties).values
                 neoSession
@@ -36,7 +34,7 @@ exports.getDemands = function(req, res, next) {
                     const response = {
                         demands : result.records.map(record => {
                             return {
-                                user: new ReturnUser(record.get('user').properties).values,
+                                user: User.create(record.get('user').properties).outputValues,
                                 demandStatus: record.get('link').properties.status
                             }
                         }),
@@ -61,7 +59,7 @@ exports.addDemands = function(req, res, next) {
     const userKeys = req.body.userKeys
     const eventKey = req.params.eventKey;
     
-    if (!userKeys || userKeys.length <= 0 || userKeys.constructor !== Array) return utils.handleBadRequestResponse(req, res,'Sorry, user keys must be a non empty array');
+    if (!userKeys || userKeys.length <= 0 || userKeys.constructor !== Array) return Utils.handleBadRequestResponse(req, res,'Sorry, user keys must be a non empty array');
 
     const checkEventExistsQuery = `MATCH (event:Event{key:'${eventKey}'}) return event`
 
@@ -79,7 +77,7 @@ exports.addDemands = function(req, res, next) {
         .run(checkEventExistsQuery)
         .then( result => {
             if (result.records.length == 0) {
-				utils.handleNoResultsResponse(req, res, 'Sorry, no event with this key was found')
+				Utils.handleNoResultsResponse(req, res, 'Sorry, no event with this key was found')
 			} else {
                 neoSession
                 .run(checkUsersExistsquery)
@@ -90,7 +88,7 @@ exports.addDemands = function(req, res, next) {
                             'userError': 'Sorry, some users were not found matching these keys',
                             'unknown keys' : unknownUsers
                         }
-                        utils.handleNoResultsResponse(req, res, msg)
+                        Utils.handleNoResultsResponse(req, res, msg)
                     } else {
                         neoSession
                         .run(addDemandsQuery)
@@ -101,7 +99,7 @@ exports.addDemands = function(req, res, next) {
                                 'event':         results.records.map(record => new ReturnEvent(record.get('event').properties).values)[0],
                                 'invited users': results.records.map(record => {
                                     return {
-                                        user: new ReturnUser(record.get('user').properties).values,
+                                        user: User.create(record.get('user').properties).outputValues,
                                         demandStatus: 'pending'
                                     }
                                 }) 
@@ -132,10 +130,10 @@ exports.editDemands = function(req, res, next) {
     const keysAndStatus = req.body.keysAndStatus
     const userKeys = keysAndStatus.map(ks => ks.userKey)
 
-    if (!keysAndStatus || keysAndStatus.length <= 0 || keysAndStatus.constructor !== Array) return utils.handleBadRequestResponse(req, res,'Sorry, syntax error. Please provide an array of user keys and status')
+    if (!keysAndStatus || keysAndStatus.length <= 0 || keysAndStatus.constructor !== Array) return Utils.handleBadRequestResponse(req, res,'Sorry, syntax error. Please provide an array of user keys and status')
     
     const queryError = (keysAndStatus).map(ks => new Demand(ks)).filter(ks => ks.error);
-    if (queryError.length > 0) return utils.handleBadRequestResponse(req, res, 'Sorry, there are syntax errors in the provided values')
+    if (queryError.length > 0) return Utils.handleBadRequestResponse(req, res, 'Sorry, there are syntax errors in the provided values')
 
     const checkEventExistsQuery = `MATCH (event:Event{key:'${eventKey}'}) return event`
     
@@ -165,7 +163,7 @@ exports.editDemands = function(req, res, next) {
     .run(checkEventExistsQuery)
     .then(result => {
         if (result.records.length <= 0 ) {
-            utils.handleNoResultsResponse(req, res, 'Sorry, no event with this key was found')
+            Utils.handleNoResultsResponse(req, res, 'Sorry, no event with this key was found')
         } else {
             neoSession
             .run(checkUsersExistsquery)
@@ -177,7 +175,7 @@ exports.editDemands = function(req, res, next) {
                         'userError': 'Sorry, some users were not found matching these keys',
                         'unknown keys' : unknownUsers
                     }
-                    utils.handleNoResultsResponse(req, res, msg)
+                    Utils.handleNoResultsResponse(req, res, msg)
                 } else {
 
                     Promise.all([
@@ -193,9 +191,9 @@ exports.editDemands = function(req, res, next) {
                             'status': 200,
                             'message': 'event demands were changed!',
                             'results' : {
-                                'accepted':results[0].records.map(record => new ReturnUser(record.get('user').properties).values),
-                                'rejected':results[1].records.map(record => new ReturnUser(record.get('user').properties).values),
-                                'pending':results[2].records.map(record => new ReturnUser(record.get('user').properties).values),
+                                'accepted':results[0].records.map(record => User.create(record.get('user').properties).outputValues),
+                                'rejected':results[1].records.map(record => User.create(record.get('user').properties).outputValues),
+                                'pending':results[2].records.map(record => User.create(record.get('user').properties).outputValues),
                             }
                         }
                         res.status(200).send(message);
@@ -225,7 +223,7 @@ exports.deleteDemands = function(req, res, next) {
     const userKeys = req.body.userKeys
     const eventKey = req.params.eventKey;
     
-    if (!userKeys || userKeys.length <= 0 || userKeys.constructor !== Array) return utils.handleBadRequestResponse(req, res,'Sorry, user keys must be a non empty array');
+    if (!userKeys || userKeys.length <= 0 || userKeys.constructor !== Array) return Utils.handleBadRequestResponse(req, res,'Sorry, user keys must be a non empty array');
 
     const checkEventExistsQuery = `MATCH (event:Event{key:'${eventKey}'}) return event`
 
@@ -242,7 +240,7 @@ exports.deleteDemands = function(req, res, next) {
         .run(checkEventExistsQuery)
         .then(result => {
             if (result.records.length == 0) {
-				utils.handleNoResultsResponse(req, res, 'Sorry, no event with this key was found')
+				Utils.handleNoResultsResponse(req, res, 'Sorry, no event with this key was found')
 			} else {
                 neoSession
                 .run(checkUsersExistsquery)
@@ -253,7 +251,7 @@ exports.deleteDemands = function(req, res, next) {
                             'userError': 'Sorry, some users were not found matching these keys',
                             'unknown keys' : unknownUsers
                         }
-                        utils.handleNoResultsResponse(req, res, msg)
+                        Utils.handleNoResultsResponse(req, res, msg)
                     } else {
                         neoSession
                             .run(deleteDemandsQuery)
@@ -261,7 +259,7 @@ exports.deleteDemands = function(req, res, next) {
                                 let message = {
                                     'message': 'event demands were deleted!',
                                     'event':           results.records.map(record => new ReturnEvent(record.get('event').properties).values)[0],
-                                    'deleted demands': results.records.map(record => new ReturnUser(record.get('user').properties).values),
+                                    'deleted demands': results.records.map(record => User.create(record.get('user').properties).outputValues),
                                 }
                                 res.status(200).send(message);
                                 closeConnection()

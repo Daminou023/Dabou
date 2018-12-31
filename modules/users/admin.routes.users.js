@@ -22,6 +22,8 @@ router.route('/:userKey')
 	.put(AdminUserController.editUser)
 	.delete(AdminUserController.deleteUser);
 
+router.route('/username/:username')
+	.get(AdminUserController.getByUsername)	
 
 router.route('/:userKey/games')
 	.get(AdminUserGamesController.listGames)
@@ -61,11 +63,7 @@ router.route('/:userKey/friends')
 
 router.route('/:userKey/friendsOfFriends')
 	.get(AdminFriendShipController.getFriendsOfFriends)
-
-
-router.route('/:userKey/activity')
-	.get(AdminUserController.getUserActicity);
-
+	
 
 router.route('/:userKey/organisedEvents')
 	.get(AdminUserEventsController.getEventsOrganisedByUser)

@@ -1,3 +1,4 @@
+import User from '../users/model.user'
 
 // CONFIGURE NEO4J DRIVER
 var randomstring  = require("randomstring");
@@ -7,7 +8,6 @@ var neoSession 	  = neoDriver.session();
 
 const Review 	  = require('./model.review');
 const ReviewLinks = require('./model.reviewLinks');
-const returnUser  = require('../users/model.users.out')
 const returnGame  = require('../games/model.games')
 
 
@@ -19,7 +19,7 @@ exports.listReviews = function(req, res, next) {
 		.then(function(result){
 			result.records.forEach(function(record){
 				let review = new Review(record.get('review').properties).values;
-				let user = new returnUser(record.get('user').properties).values.key;
+				let user = User.create(record.get('user').properties).outputValues.key;
 				listOfReviews.push({
 					review,
 					user

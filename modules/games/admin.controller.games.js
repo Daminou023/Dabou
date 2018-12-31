@@ -1,3 +1,5 @@
+import Utils from '../utils/utils'
+import User  from '../users/model.user'
 
 // CONFIGURE NEO4J DRIVER
 var randomstring = require("randomstring");
@@ -8,10 +10,6 @@ var Game 		 = require('./model.games');
 var crypto 		 = require('crypto');
 var ReturnGame   = require('./model.games')
 var ReturnReview = require('../reviews/model.review')
-var ReturnUser   = require('../users/model.users.out')
-const Utils 	 = require('../utils/utils');
-
-const utils = new Utils();
 
 // GET LIST OF ALL GAMES
 exports.listGames = function(req, res, next) {
@@ -207,7 +205,7 @@ exports.getGameReviews = function(req, res, next) {
 			let reviews = result.records.map(record => {
 				let review = new ReturnReview(record.get('review').properties).values;
 				let game = new ReturnGame(record.get('game').properties).values;
-				let user = new ReturnUser(record.get('user').properties).values;
+				let user = User.create(record.get('user').properties).outputValues;
 				return { review, game, user }
 			})
 
@@ -228,8 +226,6 @@ exports.getGameReviews = function(req, res, next) {
 
 exports.getGameExtensions = function(req, res, next) {
 	let gameKey = req.params.gameKey
-
-	console.log(gameKey)
 
 	const extensionsQuery = `MATCH (extension:Game)-[:Extends]->(:Game{key:'${gameKey}'}) 
 							 MATCH (game:Game{key:'${gameKey}'}) 
@@ -262,7 +258,7 @@ exports.addGameExtension = function(req, res, next) {
 	const extendingGameKey = req.body.extendingGameKey;
 	
 	// check if both keys were given.
-	if (!extendingGameKey) return utils.handleBadRequestResponse(req, res,'Sorry, no user or game key was given');
+	if (!extendingGameKey) return Utils.handleBadRequestResponse(req, res,'Sorry, no user or game key was given');
 
 	const addExtensionQuery = `MATCH (originalGame:Game{key:'${originalGameKey}'}) 
 							   MATCH (extendingGame:Game{key:'${extendingGameKey}'}) 

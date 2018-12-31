@@ -1,15 +1,12 @@
 import { link } from "fs";
+import Utils from '../../../utils/utils'
+import User  from '../../model.user'
 
 // CONFIGURE NEO4J DRIVER
 var randomstring  = require("randomstring");
 const neo4j 	  = require('neo4j-driver').v1;
 var neoDriver 	  = neo4j.driver("bolt://localhost:7687", neo4j.auth.basic("neo4j", "123456789"));
 var neoSession 	  = neoDriver.session();
-const Friendship  = require('./admin.friendships.model')
-const ReturnUser  = require('../../../users/model.users.out');
-const Utils 	  = require('../../../utils/utils');
-
-const utils = new Utils();
 
 
 // GET FRIENDS FOR A GIVEN PERSON
@@ -19,14 +16,11 @@ exports.getFriends = function(req, res, next) {
     const friendQuery = `MATCH (user:User{key:'${userKey}'})-[link:friendsWith]-(friend:User) 
                          return user, link, friend`                                   
 
-
     neoSession
         .run(friendQuery)
         .then(result => {
-            let friends = []
-            result.records.forEach(function(record){
-                let user = new ReturnUser(record.get('friend').properties);
-                friends.push(user.values);
+            let friends = resutl.records.map(record => {
+                return User.create(record.get('friend').properties).outputValues;
             })
             res.status(200).send(friends)
         })
@@ -51,9 +45,9 @@ exports.getFriendsOfFriends = function(req, res, next) {
             let distantFriends = []
 
             result.records.forEach(function(record){
-                let closeFriend = new ReturnUser(record.get('friend').properties);
+                let closeFriend = User.create(record.get('friend').properties).outputValues;
                 if (!closeFriends.map(user => user.key).includes(closeFriend.values.key)) closeFriends.push(closeFriend.values)
-                let friendsOfFriends = new ReturnUser(record.get('friendOfFriend').properties);
+                let friendsOfFriends = User.create(record.get('friendOfFriend').properties).outputValues;
                 if (!distantFriends.map(user => user.key).includes(friendsOfFriends.values.key)) distantFriends.push(friendsOfFriends.values)
             })
 
@@ -72,7 +66,7 @@ exports.addFriend  = function(req, res, next) {
     const userKeys      = [userKey, targetUserKey]
 
     
-    if (!targetUserKey) return utils.handleBadRequestResponse(req, res,'Sorry, no user key given');
+    if (!targetUserKey) return Utils.handleBadRequestResponse(req, res,'Sorry, no user key given');
 
     const checkUsersExistsquery = `MATCH (user:User) 
                                    WHERE user.key IN [${userKeys.map(key => `'${key}'`)}] 
@@ -95,7 +89,7 @@ exports.addFriend  = function(req, res, next) {
                 'userError': 'Sorry, user not found matching this key',
                 'unknown keys' : unknownUsers
             }
-            utils.handleNoResultsResponse(req, res, msg)
+            Utils.handleNoResultsResponse(req, res, msg)
         } else {
             neoSession
             .run(checkIfAlreadyFriendsQuery)
@@ -106,8 +100,8 @@ exports.addFriend  = function(req, res, next) {
                     .then(results => {
                         let users = results.records.map(record => {
                             return {
-                                user: new ReturnUser(record.get('user').properties).values,
-                                invitedUser: new ReturnUser(record.get('targetUser').properties).values,
+                                user: User.create(record.get('user').properties).outputValues,
+                                invitedUser: User.create(record.get('targetUser').properties).outputValues,
                             }
                         })
                         if (users.length > 0) {
@@ -151,7 +145,7 @@ exports.deleteFriend = function(req, res, next) {
     const targetUserKey = req.body.targetUserKey
     const userKeys      = [userKey, targetUserKey]
     
-    if (!userKey || !targetUserKey) return utils.handleBadRequestResponse(req, res,'Sorry, no user or target user key was given');
+    if (!userKey || !targetUserKey) return Utils.handleBadRequestResponse(req, res,'Sorry, no user or target user key was given');
 
     const checkUsersExistsquery = `MATCH (user:User) 
                                    WHERE user.key IN [${userKeys.map(key => `'${key}'`)}] 
@@ -170,15 +164,15 @@ exports.deleteFriend = function(req, res, next) {
                     'userError': 'Sorry, user was not found matching this key',
                     'unknown keys' : unknownUsers
                 }
-                utils.handleUnknownInputResponse(req, res, msg)
+                Utils.handleUnknownInputResponse(req, res, msg)
             } else {
                 neoSession
                     .run(deleteFriendQuery)
                     .then(results => {
                         
                         let msg = '';
-                        let user = results.records.map(record => new ReturnUser(record.get('user').properties).values);
-                        let targetUser = results.records.map(record => new ReturnUser(record.get('targetUser').properties).values);
+                        let user = results.records.map(record => User.create(record.get('user').properties).outputValues);
+                        let targetUser = results.records.map(record => User.create(record.get('targetUser').properties).outputValues);
                         
                         if (user.length <= 0 || targetUser.length <=0) {
                             msg = 'there is no existing friendship between these two users'

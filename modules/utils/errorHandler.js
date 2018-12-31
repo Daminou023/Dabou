@@ -1,3 +1,4 @@
+import { stat } from "fs";
 
 const ErrorHandler = function () {
 
@@ -22,12 +23,42 @@ const ErrorHandler = function () {
         }
         res.status(400).send(message);
     }
+
+    function returnError(err, req, res, next) {
+        
+        const env   = process.env.NODE_ENV
+        let status  = err.code || 500;
+        let message = err.message || 'internal server error';
+
+        if (env == 'development') {
+            if (status == 500) // only show message if generic server error
+            return res.status(status).json({message:message})
+            
+            return res.status(status).json(err)
+        }
+
+        switch (err.code) {
+            case 404:
+                message = 'sorry, nothing found'        
+            break;
+            case 400:
+                message = 'sorry, bad request'        
+            break;
+            default:
+                message = 'internal server error';
+            break;        
+        }
+        res.status(status).json({message: message})
+    }
     
 	return {
+        returnError: returnError,
         handleBadRequestResponse,
         handleUnknownInputResponse,
         handleNoResultsResponse
     }
-}
+}()
 
 module.exports = ErrorHandler;
+
+
