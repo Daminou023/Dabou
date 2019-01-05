@@ -1,7 +1,7 @@
 import express, { Router } from 'express';
 import passport 		   from 'passport';
 
-const adminAPI = require('./api/admin')
+const adminAPI = require('./api')
 const authAPI  = require('./auth')
 
 // INITIALISE PRIMARY ROUTER

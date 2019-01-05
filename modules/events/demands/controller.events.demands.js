@@ -9,7 +9,7 @@ var neoDriver 	  = neo4j.driver("bolt://localhost:7687", neo4j.auth.basic("neo4j
 var neoSession 	  = neoDriver.session();
 var Event 		  = require('../model.event');
 var EventLinks    = require('../model.eventLinks');
-const Demand      = require('./admin.events.demand.model')
+const Demand      = require('./events.demand.model')
 const ReturnEvent = require('../model.event.out');
 
 

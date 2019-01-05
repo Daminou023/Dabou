@@ -7,7 +7,7 @@ var randomstring  = require("randomstring");
 const neo4j 	  = require('neo4j-driver').v1;
 var neoDriver 	  = neo4j.driver("bolt://localhost:7687", neo4j.auth.basic("neo4j", "123456789"));
 var neoSession 	  = neoDriver.session();
-const Friendship  = require('./admin.friendships.invitations.model')
+const Friendship  = require('./friendships.invitations.model')
 
 // GET INVITATIONS FOR A GIVEN PERSON (ALL SENT AND RECEIVED)
 
