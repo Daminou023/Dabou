@@ -18,87 +18,65 @@ const UserGameBorrowController 	   = require('./games/borrow/controller.users.ga
 
 
 router.route('/list')
-	.get(roleAuth(['user']), UserController.listUsers)
+	.get(roleAuth(['user', 'admin']), UserController.listUsers)
 
 router.route('/new')
-	.post(UserController.createUser);	
+	.post(roleAuth(['admin']),UserController.createUser);	
 
 	
 router.route('/:userKey')
-	.get(UserController.getUser)
-	.put(UserController.editUser)
-	.delete(UserController.deleteUser);
+	.get(roleAuth(['admin']), UserController.getUser)
+	.put(roleAuth(['admin']), UserController.editUser)
+	.delete(roleAuth(['admin']), UserController.deleteUser);
 
 router.route('/username/:username')
-	.get(UserController.getByUsername)	
+	.get(roleAuth(['admin']), UserController.getByUsername)	
 
 router.route('/:userKey/games')
-	.get(UserGamesController.listGames)
-	.post(UserGamesController.addGame)
-	.delete(UserGamesController.deleteGAme);	
+	.get(roleAuth(['admin']), UserGamesController.listGames)
+	.post(roleAuth(['admin']), UserGamesController.addGame)
+	.delete(roleAuth(['admin']), UserGamesController.deleteGAme);	
 
 router.route('/:userKey/games/reviews')
-	.get(UserGamesController.getUserReviews)
+	.get(roleAuth(['admin']), UserGamesController.getUserReviews)
 
 router.route('/:userKey/games/wishes')
-	.get(UserGameWishesController.listWishedGames)
-	.post(UserGameWishesController.addWishedGame)
-	.delete(UserGameWishesController.deleteWhisedGAme);	
+	.get(roleAuth(['admin']), UserGameWishesController.listWishedGames)
+	.post(roleAuth(['admin']), UserGameWishesController.addWishedGame)
+	.delete(roleAuth(['admin']), UserGameWishesController.deleteWhisedGAme);	
 
 router.route('/:userKey/games/borrow')	
-	.post(UserGameBorrowController.addBorrowedGame)
-	.get(UserGameBorrowController.listBorrowedGames)
-	.put(UserGameBorrowController.editBorrowedGame)
-	.delete(UserGameBorrowController.deleteEntry)
+	.post(roleAuth(['admin']), UserGameBorrowController.addBorrowedGame)
+	.get(roleAuth(['admin']), UserGameBorrowController.listBorrowedGames)
+	.put(roleAuth(['admin']), UserGameBorrowController.editBorrowedGame)
+	.delete(roleAuth(['admin']), UserGameBorrowController.deleteEntry)
 
 router.route('/:userKey/games/lend')	
-	.get(UserGameBorrowController.listLendedGames)
+	.get(roleAuth(['admin']), UserGameBorrowController.listLendedGames)
 
 router.route('/:userKey/friendInvites')
-	.get(FriendShipInvitationsController.getInvitations)
-	.post(FriendShipInvitationsController.addFriendInvite)
-	.delete(FriendShipInvitationsController.deleteFriendRequest)
-	.put(FriendShipInvitationsController.acceptOrRefuseFriendRequest);
+	.get(roleAuth(['admin']), FriendShipInvitationsController.getInvitations)
+	.post(roleAuth(['admin']), FriendShipInvitationsController.addFriendInvite)
+	.delete(roleAuth(['admin']), FriendShipInvitationsController.deleteFriendRequest)
+	.put(roleAuth(['admin']), FriendShipInvitationsController.acceptOrRefuseFriendRequest);
 
 
 router.route('/:userKey/friends')
-	.get(FriendShipController.getFriends)
-	.post(FriendShipController.addFriend)
-	.delete(FriendShipController.deleteFriend);
+	.get(roleAuth(['admin']), FriendShipController.getFriends)
+	.post(roleAuth(['admin']), FriendShipController.addFriend)
+	.delete(roleAuth(['admin']), FriendShipController.deleteFriend);
 
 
 router.route('/:userKey/friendsOfFriends')
-	.get(FriendShipController.getFriendsOfFriends)
+	.get(roleAuth(['admin']), FriendShipController.getFriendsOfFriends)
 	
 
 router.route('/:userKey/organisedEvents')
-	.get(UserEventsController.getEventsOrganisedByUser)
+	.get(roleAuth(['admin']), UserEventsController.getEventsOrganisedByUser)
 
 
 router.route('/:userKey/participatedEvents')
-	.get(UserEventsController.getEventsParticipatedBuUser)	
-
-
-router.get('/advanced', authorize, listUsers);
-
-
-function authorize(req, res, next) {
-	if (true) {
-		next()
-	}
-	else {
-		res.send('forbiden', 403)
-	}
-}
-
-
-function listUsers(req, res) {
-	res.send("Holly shit it works");
-}
-
-
-
-
+	.get(roleAuth(['admin']), UserEventsController.getEventsParticipatedBuUser)	
 
 
 module.exports = router;
