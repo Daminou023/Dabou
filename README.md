@@ -1,11 +1,11 @@
 # Dabou
 
+A backend under construction for the Dabou board game library application and party planner.
 
-## Gaetan
+Built using:
 
+- NodeJS
+- ExpressJS
+- Neo4J
 
-## Kevin
-
-## Damien
-
-## Sebastien
+Start: npm start
